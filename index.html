@@ -46,7 +46,7 @@
 
   nav.bottom{position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; justify-content:center; pointer-events:none; padding:0 0 max(10px, env(safe-area-inset-bottom));}
   nav.bottom .bar{pointer-events:auto; width:min(620px, calc(100% - 24px)); margin:0 12px; background:var(--chrome); color:#C9C0B2; border-radius:22px; display:flex; justify-content:space-around; align-items:center; padding:9px 6px; box-shadow:var(--shadow-lg);}
-  nav.bottom button{background:none; border:0; color:inherit; font-family:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 12px; border-radius:14px; font-size:11px; transition:.2s; flex:1;}
+  nav.bottom button{background:none; border:0; color:inherit; font-family:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 4px; border-radius:14px; font-size:10.5px; transition:.2s; flex:1;}
   nav.bottom button svg{width:22px; height:22px; stroke-width:1.9;}
   nav.bottom button.active{color:var(--chrome-ink);}
   nav.bottom button.active svg{stroke-width:2.3;}
@@ -134,6 +134,37 @@
   .dl-btn.ok{background:var(--q2); border-color:var(--q2);}
   .dl-btn.ok svg{width:16px;height:16px;}
 
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin:8px 2px 12px;}
+  .cal-head .mtitle{font-size:17px; font-weight:700;}
+  .cal-nav{display:flex; gap:8px; align-items:center;}
+  .cal-nav button{width:36px;height:36px;border-radius:11px;border:1px solid var(--line);background:var(--surface);font-size:18px;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0;}
+  .cal-today-btn{font-size:12.5px !important; width:auto !important; padding:0 12px !important; font-weight:600;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .cal-dow{text-align:center; font-size:11px; font-weight:600; color:var(--ink-3); padding:2px 0 6px;}
+  .cal-cell{aspect-ratio:1; border-radius:11px; background:var(--surface); border:1px solid var(--line-2); cursor:pointer; display:flex; flex-direction:column; align-items:center; padding-top:7px; position:relative; transition:.12s;}
+  .cal-cell.empty{background:none; border:0; cursor:default;}
+  .cal-cell .dn{font-size:13.5px; font-weight:500; line-height:1;}
+  .cal-cell.today{border-color:var(--q2); border-width:2px;}
+  .cal-cell.today .dn{color:var(--q2); font-weight:700;}
+  .cal-cell.sel{background:var(--chrome); border-color:var(--chrome);}
+  .cal-cell.sel .dn{color:var(--chrome-ink);}
+  .cal-dots{display:flex; gap:3px; margin-top:5px; flex-wrap:wrap; justify-content:center; max-width:90%;}
+  .cal-dots .cd{width:6px;height:6px;border-radius:50%;}
+  .cal-cell.sel .cal-dots .cd{outline:1px solid rgba(255,255,255,.5);}
+  .cal-deadline{position:absolute; top:5px; right:6px; width:6px;height:6px;border-radius:2px;background:var(--warn);}
+  .cal-day-detail{margin-top:18px;}
+  .ev-row{display:flex; gap:11px; padding:12px 14px; align-items:center; border-bottom:1px solid var(--line-2); cursor:pointer;}
+  .ev-row:last-child{border-bottom:0;}
+  .ev-row:active{background:var(--surface-2);}
+  .ev-row .ev-time{font-size:13px; font-weight:600; width:52px; flex:none; color:var(--ink); text-align:right;}
+  .ev-row .ev-time.allday{font-size:11px; color:var(--ink-3); font-weight:500;}
+  .ev-row .ev-bar{width:4px; align-self:stretch; border-radius:3px; flex:none;}
+  .ev-row .ev-title{font-size:14.5px; font-weight:500; line-height:1.3;}
+  .ev-row .ev-meta{font-size:11.5px; color:var(--ink-3); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .ev-row .ev-due-tag{font-size:10.5px; color:var(--warn); font-weight:600;}
+  .monthdays{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .monthdays button{aspect-ratio:1; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); font-family:inherit; font-size:12.5px; cursor:pointer; color:var(--ink-2); padding:0; transition:.1s;}
+  .monthdays button.on{background:var(--chrome); color:var(--chrome-ink); border-color:var(--chrome);}
   .rv{display:flex; gap:11px; padding:12px 14px; align-items:center; border-bottom:1px solid var(--line-2); cursor:pointer;}
   .rv:last-child{border-bottom:0;}
   .rv .rvchk{width:22px;height:22px;border-radius:50%;border:2px solid var(--ink-3); flex:none; display:flex; align-items:center; justify-content:center; transition:.15s;}
@@ -233,6 +264,7 @@
   <div class="bar">
     <button data-tab="today" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg><span>วันนี้</span></button>
     <button data-tab="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg><span>งาน</span></button>
+    <button data-tab="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><path d="M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2"/></svg><span>ปฏิทิน</span></button>
     <button data-tab="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>ตาราง</span></button>
     <button data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/></svg><span>ภาพรวม</span></button>
   </div>
@@ -280,6 +312,27 @@
 </div>
 
 <!-- BUSINESS MODAL -->
+<!-- EVENT MODAL -->
+<div class="overlay" id="event-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3 id="ev-title-h">เพิ่มนัดหมาย / งานประจำ</h3><button class="del-x" data-close="event-modal">✕</button></div>
+    <div class="body">
+      <div class="field"><label>เรื่อง</label><input type="text" id="ev-text" placeholder="เช่น ประชุมทีม, จ่ายค่าเช่า, นัดหมอ" autocomplete="off"></div>
+      <div class="field"><label>ธุรกิจ / ด้าน</label><select id="ev-biz"></select></div>
+      <div class="field"><label>ประเภท</label><div class="seg" id="ev-rep"><button data-v="none">นัดครั้งเดียว</button><button data-v="weekly">ทุกสัปดาห์</button><button data-v="monthly">ทุกเดือน</button></div></div>
+      <div class="field" id="ev-date-field"><label>วันที่นัด</label><input type="date" id="ev-date"></div>
+      <div class="field" id="ev-weekly-field" style="display:none"><label>ทำทุกวัน (เลือกได้หลายวัน)</label><div class="days" id="ev-weekdays"></div></div>
+      <div class="field" id="ev-monthly-field" style="display:none"><label>ทำทุกวันที่ (เลือกได้หลายวันที่)</label><div class="monthdays" id="ev-monthdays"></div></div>
+      <div class="field"><label>เวลา (ถ้ามี — เว้นว่างได้)</label><input type="time" id="ev-time"></div>
+      <div class="field"><label>โน้ต</label><textarea id="ev-notes" placeholder="รายละเอียด"></textarea></div>
+      <button class="btn full" id="ev-cal" style="margin-top:16px">🔔 เพิ่มลง Google ปฏิทิน (เตือนแม้ปิดแอป)</button>
+      <div class="hint" style="margin-top:7px;text-align:center">บันทึกลงปฏิทินมือถือแล้วจะเตือนเองตามรอบ</div>
+      <div class="sheet-actions"><button class="btn danger" id="ev-delete" style="display:none">ลบ</button><button class="btn dark full" id="ev-save">บันทึก</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="biz-modal">
   <div class="sheet">
     <div class="grab"></div>
@@ -380,6 +433,11 @@ function seed(){
   return {
     businesses, tasks, blocks,
     review:{ items:['ทบทวนงานค้างของทุกธุรกิจ','ตรวจยอด / บัญชีรายสัปดาห์','วางแผนคอนเทนต์ PR สัปดาห์หน้า','เช็กงานที่มอบหมายให้พนักงาน','กันเวลาครอบครัวสัปดาห์หน้า (ลูก + ภรรยา)','ดูแลตัวเอง / สุขภาพ'], done:{}, week:'' },
+    events:[
+      {id:uid(),title:'ประชุมทีม PR',businessId:'b4',repeat:'weekly',weekdays:[2],monthdays:[],date:'',time:'14:00',notes:'',createdAt:Date.now()},
+      {id:uid(),title:'จ่ายค่าเช่า / รอบบิล',businessId:'me',repeat:'monthly',weekdays:[],monthdays:[1],date:'',time:'',notes:'',createdAt:Date.now()},
+      {id:uid(),title:'ตรวจสุขภาพประจำปี',businessId:'me',repeat:'none',weekdays:[],monthdays:[],date:addInterval(todayStr(),'weekly'),time:'10:00',notes:'',createdAt:Date.now()},
+    ],
     settings:{ name:'', familyGoal:18 },
     _updatedAt: Date.now()
   };
@@ -390,6 +448,8 @@ function ensureShape(){
   S.businesses=S.businesses||[]; S.tasks=S.tasks||[]; S.blocks=S.blocks||[];
   S.settings=S.settings||{name:'',familyGoal:18};
   S.review=S.review||{items:[],done:{},week:''};
+  S.events=S.events||[];
+  S.events.forEach(e=>{ if(!('weekdays'in e))e.weekdays=[]; if(!('monthdays'in e))e.monthdays=[]; if(!('repeat'in e))e.repeat='none'; });
   S.tasks.forEach(t=>{ if(!('repeat'in t))t.repeat='none'; if(!('lastDone'in t))t.lastDone=0; if(!('lastFollowup'in t))t.lastFollowup=0; if(!('createdAt'in t))t.createdAt=Date.now(); });
 }
 function ensureLocal(){ LOCAL.syncCode=LOCAL.syncCode||''; if(!('notif'in LOCAL))LOCAL.notif=false; LOCAL.lastBriefing=LOCAL.lastBriefing||''; }
@@ -489,6 +549,7 @@ function render(){
   const m=document.getElementById('app-main'); m.className='fade-in'; void m.offsetWidth;
   if(TAB==='today') m.innerHTML=viewToday();
   else if(TAB==='tasks') m.innerHTML=viewTasks();
+  else if(TAB==='calendar') m.innerHTML=viewCalendar();
   else if(TAB==='schedule') m.innerHTML=viewSchedule();
   else if(TAB==='overview') m.innerHTML=viewOverview();
   document.querySelectorAll('nav.bottom button').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===TAB));
@@ -504,6 +565,7 @@ function viewToday(){
   const fh=familyHours(); const goal=S.settings.familyGoal||0; const famOk=goal>0 && fh>=goal;
   const top=[...open].sort((a,b)=>score(b)-score(a)).slice(0,6);
   const todayBlocks=S.blocks.filter(bk=>bk.days.includes(dow)).sort((a,b)=>mins(a.start)-mins(b.start));
+  const todayEvents=eventsOnDate(todayStr());
 
   let html='';
   if(forgot.length){
@@ -521,6 +583,8 @@ function viewToday(){
   <div class="card deleg">${delegList.slice(0,6).map(delegRow).join('')}${delegList.length>6?`<div class="hint" style="padding:10px 14px">+ อีก ${delegList.length-6} งาน — ดูทั้งหมดในแท็บ "งาน"</div>`:''}</div>`:''}
   <div class="section-title">ทำก่อน (เรียงตามความสำคัญ)</div>
   <div class="card">${top.length? top.map(taskRow).join('') : emptyBox('ยังไม่มีงานค้าง','กดปุ่ม + เพื่อเพิ่มงาน')}</div>
+  ${todayEvents.length?`<div class="section-title">นัดหมาย / งานประจำวันนี้</div>
+  <div class="card">${todayEvents.map(ev=>evRow(ev,false)).join('')}</div>`:''}
   <div class="section-title">ตารางวันนี้ · วัน${TH_DAY[dow]}</div>
   <div class="card">${todayBlocks.length? todayBlocks.map(bk=>blockRow(bk,false)).join('') : emptyBox('วันนี้ยังไม่มีช่วงเวลาที่กันไว้','ไปตั้งในแท็บ "ตาราง"')}</div>
   <div style="height:8px"></div>`;
@@ -609,7 +673,7 @@ function viewOverview(){
 
 /* ======================= EVENTS ======================= */
 document.querySelectorAll('nav.bottom button').forEach(btn=>btn.addEventListener('click',()=>{ TAB=btn.dataset.tab; render(); window.scrollTo({top:0,behavior:'smooth'}); }));
-document.getElementById('fab').addEventListener('click',()=>openTask());
+document.getElementById('fab').addEventListener('click',()=>{ if(TAB==='calendar') openEvent(null, calSelected||todayStr()); else openTask(); });
 
 document.getElementById('app-main').addEventListener('click',e=>{
   const el=e.target.closest('[data-action]'); if(!el) return;
@@ -626,6 +690,12 @@ document.getElementById('app-main').addEventListener('click',e=>{
   else if(a==='goal'){ S.settings.familyGoal=Math.max(0,(S.settings.familyGoal||0)+parseInt(id)); save(); render(); }
   else if(a==='open-biz') openBizModal();
   else if(a==='install') installApp();
+  else if(a==='cal-select'){ calSelected=id; render(); }
+  else if(a==='cal-prev'){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} render(); }
+  else if(a==='cal-next'){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} render(); }
+  else if(a==='cal-today'){ calInit(); calSelected=todayStr(); render(); }
+  else if(a==='add-event') openEvent(null, id);
+  else if(a==='edit-event') openEvent(id);
   else if(a==='open-sync') openSync();
   else if(a==='notif-toggle') toggleNotif();
   else if(a==='export') doExport();
@@ -699,6 +769,119 @@ document.getElementById('bm-save').onclick=()=>{
 };
 document.getElementById('bm-delete').onclick=()=>{ if(editBlockId && confirm('ลบช่วงเวลานี้?')){ S.blocks=S.blocks.filter(x=>x.id!==editBlockId); save(); hideOverlay('block-modal'); render(); toast('ลบแล้ว'); } };
 document.getElementById('bm-cal').onclick=()=>{ const label=document.getElementById('bm-label').value.trim(); if(!label){ toast('ใส่ชื่อช่วงเวลาก่อนนะครับ'); return; } if(!bmDays.length){ toast('เลือกอย่างน้อย 1 วัน'); return; } const bk={label,businessId:document.getElementById('bm-biz').value,days:bmDays.slice(),start:document.getElementById('bm-start').value,end:document.getElementById('bm-end').value}; window.open(gcalBlockUrl(bk),'_blank'); toast('เปิด Google ปฏิทิน...'); };
+
+/* =================== CALENDAR / EVENTS =================== */
+const EV_REP={weekly:'ทุกสัปดาห์',monthly:'ทุกเดือน'};
+function eventsOnDate(ds){
+  const dt=new Date(ds+'T00:00:00'); const dow=dt.getDay(); const dom=dt.getDate();
+  return S.events.filter(ev=>{
+    if(ev.repeat==='weekly') return (ev.weekdays||[]).includes(dow);
+    if(ev.repeat==='monthly') return (ev.monthdays||[]).includes(dom);
+    return ev.date===ds;
+  }).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
+}
+function tasksDueOnDate(ds){ return S.tasks.filter(t=>!t.done && t.due===ds); }
+function nextDateForMonthdays(mds){ const t=new Date(); t.setHours(0,0,0,0); for(let i=0;i<62;i++){ const d=new Date(t); d.setDate(t.getDate()+i); if(mds.includes(d.getDate())) return d; } return t; }
+function evRow(ev, showRepeat){
+  const b=getBiz(ev.businessId);
+  const timeHtml = ev.time ? `<div class="ev-time">${ev.time}</div>` : `<div class="ev-time allday">ทั้งวัน</div>`;
+  let rep='';
+  if(showRepeat && ev.repeat==='weekly') rep=`· ${[...(ev.weekdays||[])].sort((a,b)=>DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b)).map(d=>TH_DAY_S[d]).join(' ')}`;
+  else if(showRepeat && ev.repeat==='monthly') rep=`· ทุกวันที่ ${[...(ev.monthdays||[])].sort((a,b)=>a-b).join(', ')}`;
+  return `<div class="ev-row" data-action="edit-event" data-id="${ev.id}">
+    ${timeHtml}
+    <div class="ev-bar" style="background:${b.color}"></div>
+    <div style="flex:1; min-width:0"><div class="ev-title">${esc(ev.title)}</div>
+      <div class="ev-meta">${esc(b.name)} ${ev.repeat!=='none'?`<span class="tag rep" style="font-size:10px;padding:1px 7px">↻ ${EV_REP[ev.repeat]}</span>`:''} ${rep}</div></div>
+  </div>`;
+}
+function gcalEventUrl(ev){
+  const b=getBiz(ev.businessId); let d;
+  if(ev.repeat==='weekly') d=nextDateForDays(ev.weekdays&&ev.weekdays.length?ev.weekdays:[new Date().getDay()]);
+  else if(ev.repeat==='monthly') d=nextDateForMonthdays(ev.monthdays&&ev.monthdays.length?ev.monthdays:[new Date().getDate()]);
+  else d=new Date((ev.date||todayStr())+'T00:00:00');
+  const time=ev.time||'09:00'; const [h,m]=time.split(':').map(Number);
+  const start=fmtDT(d,`${pad2(h)}:${pad2(m)}`);
+  const eh=h+1; const endStr=(eh>23)?fmtDT(d,'23:59'):fmtDT(d,`${pad2(eh)}:${pad2(m)}`);
+  let url=gcalBase(ev.title,'ศูนย์ควบคุมชีวิต · '+b.name, start, endStr);
+  if(ev.repeat==='weekly' && ev.weekdays&&ev.weekdays.length) url+='&recur=RRULE:FREQ=WEEKLY;BYDAY='+ev.weekdays.slice().sort((a,b)=>a-b).map(x=>RR_DAY[x]).join(',');
+  else if(ev.repeat==='monthly' && ev.monthdays&&ev.monthdays.length) url+='&recur=RRULE:FREQ=MONTHLY;BYMONTHDAY='+ev.monthdays.slice().sort((a,b)=>a-b).join(',');
+  return url;
+}
+
+let calYear, calMonth, calSelected=null;
+function calInit(){ const d=new Date(); calYear=d.getFullYear(); calMonth=d.getMonth(); }
+function monthMatrix(y,m){
+  const startDow=new Date(y,m,1).getDay(); const dim=new Date(y,m+1,0).getDate(); const cells=[];
+  for(let i=0;i<startDow;i++) cells.push(null);
+  for(let d=1;d<=dim;d++) cells.push(`${y}-${pad2(m+1)}-${pad2(d)}`);
+  return cells;
+}
+function viewCalendar(){
+  if(calYear===undefined) calInit();
+  if(!calSelected) calSelected=todayStr();
+  const cells=monthMatrix(calYear,calMonth); const today=todayStr();
+  const dows=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let grid=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  cells.forEach(ds=>{
+    if(!ds){ grid+=`<div class="cal-cell empty"></div>`; return; }
+    const day=parseInt(ds.slice(-2),10); const evs=eventsOnDate(ds); const due=tasksDueOnDate(ds).length;
+    const dots=evs.slice(0,4).map(ev=>`<span class="cd" style="background:${getBiz(ev.businessId).color}"></span>`).join('');
+    grid+=`<div class="cal-cell ${ds===today?'today':''} ${ds===calSelected?'sel':''}" data-action="cal-select" data-id="${ds}">
+      <div class="dn">${day}</div>${dots?`<div class="cal-dots">${dots}</div>`:''}${due?`<span class="cal-deadline"></span>`:''}</div>`;
+  });
+  const selEvents=eventsOnDate(calSelected); const selDue=tasksDueOnDate(calSelected);
+  const sd=new Date(calSelected+'T00:00:00');
+  const selLabel=`วัน${TH_DAY[sd.getDay()]} ${sd.getDate()} ${TH_MON[sd.getMonth()]}`;
+  let detail=`<div class="section-title">${selLabel}${calSelected===today?' · วันนี้':''}</div>`;
+  if(selEvents.length || selDue.length){
+    detail+=`<div class="card">`+selEvents.map(ev=>evRow(ev,true)).join('')
+      +selDue.map(t=>{const b=getBiz(t.businessId); return `<div class="ev-row" data-action="edit-task" data-id="${t.id}"><div class="ev-time allday">งาน</div><div class="ev-bar" style="background:${b.color}"></div><div style="flex:1;min-width:0"><div class="ev-title">${esc(t.text)}</div><div class="ev-meta">${esc(b.name)} <span class="ev-due-tag">⚑ ถึงกำหนด</span></div></div></div>`;}).join('')
+      +`</div>`;
+  } else { detail+=`<div class="card">${emptyBox('วันนี้ยังไม่มีนัดหมาย','กดปุ่มด้านล่างเพื่อเพิ่ม')}</div>`; }
+  detail+=`<button class="btn full" data-action="add-event" data-id="${calSelected}" style="margin-top:10px"> + เพิ่มนัดหมาย / งานประจำ</button>`;
+  return `<div class="cal-head"><div class="mtitle">${TH_MON[calMonth]} ${calYear+543}</div>
+    <div class="cal-nav"><button data-action="cal-today" class="cal-today-btn">วันนี้</button><button data-action="cal-prev">‹</button><button data-action="cal-next">›</button></div></div>
+    <div class="cal-grid">${grid}</div>
+    <div class="hint" style="margin:10px 4px 0">จุดสี = นัดหมาย/งานประจำ · ■ มุมขวา = มีงานถึงกำหนด · แตะวันเพื่อดู/เพิ่ม</div>
+    <div class="cal-day-detail">${detail}</div><div style="height:8px"></div>`;
+}
+
+/* ---------- EVENT MODAL ---------- */
+let editEventId=null, evRep='none', evWeekdays=[], evMonthdays=[];
+function openEvent(id, presetDate){
+  editEventId=id||null; const ev=id?S.events.find(x=>x.id===id):null;
+  document.getElementById('ev-title-h').textContent=id?'แก้ไขรายการ':'เพิ่มนัดหมาย / งานประจำ';
+  document.getElementById('ev-text').value=ev?ev.title:'';
+  document.getElementById('ev-notes').value=ev?(ev.notes||''):'';
+  document.getElementById('ev-time').value=ev?(ev.time||''):'';
+  document.getElementById('ev-date').value=(ev&&ev.date)?ev.date:(presetDate||todayStr());
+  evRep=ev?(ev.repeat||'none'):'none'; evWeekdays=(ev&&ev.weekdays)?ev.weekdays.slice():[]; evMonthdays=(ev&&ev.monthdays)?ev.monthdays.slice():[];
+  const sel=document.getElementById('ev-biz'); sel.innerHTML=S.businesses.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('');
+  sel.value=ev?ev.businessId:(S.businesses[0]&&S.businesses[0].id);
+  document.getElementById('ev-weekdays').innerHTML=DAY_ORDER.map(d=>`<button data-d="${d}">${TH_DAY_S[d]}</button>`).join('');
+  document.getElementById('ev-monthdays').innerHTML=Array.from({length:31},(_,i)=>i+1).map(n=>`<button data-md="${n}">${n}</button>`).join('');
+  document.querySelectorAll('#ev-weekdays button').forEach(b=>{ const d=+b.dataset.d; b.classList.toggle('on',evWeekdays.includes(d)); b.onclick=()=>{ if(evWeekdays.includes(d))evWeekdays=evWeekdays.filter(x=>x!==d); else evWeekdays.push(d); b.classList.toggle('on'); }; });
+  document.querySelectorAll('#ev-monthdays button').forEach(b=>{ const n=+b.dataset.md; b.classList.toggle('on',evMonthdays.includes(n)); b.onclick=()=>{ if(evMonthdays.includes(n))evMonthdays=evMonthdays.filter(x=>x!==n); else evMonthdays.push(n); b.classList.toggle('on'); }; });
+  paintEvRep(); document.getElementById('ev-delete').style.display=id?'block':'none'; showOverlay('event-modal');
+}
+function paintEvRep(){
+  document.querySelectorAll('#ev-rep button').forEach(b=>b.classList.toggle('on',b.dataset.v===evRep));
+  document.getElementById('ev-date-field').style.display=evRep==='none'?'block':'none';
+  document.getElementById('ev-weekly-field').style.display=evRep==='weekly'?'block':'none';
+  document.getElementById('ev-monthly-field').style.display=evRep==='monthly'?'block':'none';
+}
+document.querySelectorAll('#ev-rep button').forEach(b=>b.onclick=()=>{ evRep=b.dataset.v; paintEvRep(); });
+function evFormData(){ return { title:document.getElementById('ev-text').value.trim(), businessId:document.getElementById('ev-biz').value, repeat:evRep, weekdays:evWeekdays.slice(), monthdays:evMonthdays.slice(), date:(evRep==='none'?(document.getElementById('ev-date').value||todayStr()):''), time:document.getElementById('ev-time').value, notes:document.getElementById('ev-notes').value.trim() }; }
+document.getElementById('ev-save').onclick=()=>{
+  const d=evFormData(); if(!d.title){ toast('ใส่เรื่องก่อนนะครับ'); return; }
+  if(evRep==='weekly' && !evWeekdays.length){ toast('เลือกวันอย่างน้อย 1 วัน'); return; }
+  if(evRep==='monthly' && !evMonthdays.length){ toast('เลือกวันที่อย่างน้อย 1 วัน'); return; }
+  if(editEventId){ Object.assign(S.events.find(x=>x.id===editEventId),d); } else { S.events.push(Object.assign({id:uid(),createdAt:Date.now()},d)); }
+  save(); hideOverlay('event-modal'); render(); toast('บันทึกแล้ว');
+};
+document.getElementById('ev-delete').onclick=()=>{ if(editEventId && confirm('ลบรายการนี้?')){ S.events=S.events.filter(x=>x.id!==editEventId); save(); hideOverlay('event-modal'); render(); toast('ลบแล้ว'); } };
+document.getElementById('ev-cal').onclick=()=>{ const d=evFormData(); if(!d.title){ toast('ใส่เรื่องก่อนนะครับ'); return; } window.open(gcalEventUrl(d),'_blank'); toast('เปิด Google ปฏิทิน...'); };
 
 /* ---------- BUSINESS MODAL ---------- */
 let newBizColor=PALETTE[0];
@@ -792,6 +975,8 @@ function showBriefing(){
   else body+=line('❤️','#FDF2EF',`วันนี้ยังไม่ได้กันเวลาครอบครัว`);
   const fup=delegatedOpen().filter(needsFollowup).length;
   if(fup) body+=line('📞','#FBF6E8',`มีงานมอบหมาย <b>${fup}</b> งานที่ควรตามความคืบหน้า`);
+  const evToday=eventsOnDate(todayStr());
+  if(evToday.length){ const f=evToday[0]; body+=line('📅','#EEF3F7',`มีนัด/งานประจำวันนี้ <b>${evToday.length}</b> รายการ${f.time?` · เริ่ม ${f.time} น.`:''}`); }
   body+=`</div>`;
   if(top.length){ body+=`<div style="font-size:12.5px;font-weight:600;color:var(--ink-2);margin:16px 4px 6px">3 อันดับแรกที่ควรเริ่ม</div><div class="card">${top.map(taskRow).join('')}</div>`; }
   body+=`<button class="btn dark full" id="brief-go" style="margin-top:18px">เริ่มวันนี้กันเลย</button>`;
