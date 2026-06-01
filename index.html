@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#28231E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>ศูนย์ควบคุมชีวิต</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Bai+Jamjuree:wght@600;700&display=swap" rel="stylesheet">
+<!-- Firebase (compat) — ใช้ซิงค์ข้ามเครื่อง ถ้าโหลดไม่ได้ แอปยังทำงานปกติแบบออฟไลน์ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#F3EEE5; --surface:#FFFEFB; --surface-2:#FAF6EF;
+    --ink:#28231E; --ink-2:#6E665C; --ink-3:#ABA193;
+    --line:#E6DFD2; --line-2:#EFE9DD;
+    --chrome:#28231E; --chrome-ink:#FFFEFB;
+    --q1:#C0492F; --q2:#2E7D6B; --q3:#CE8E2D; --q4:#9AA096;
+    --family:#DB6B5E; --warn:#C0492F;
+    --shadow-sm:0 1px 2px rgba(40,35,30,.05), 0 1px 3px rgba(40,35,30,.04);
+    --shadow:0 2px 4px rgba(40,35,30,.05), 0 8px 24px rgba(40,35,30,.07);
+    --shadow-lg:0 6px 16px rgba(40,35,30,.10), 0 18px 40px rgba(40,35,30,.12);
+    --r:18px; --r-sm:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:'Anuphan',system-ui,sans-serif; color:var(--ink);
+    background:radial-gradient(120% 60% at 28% -10%, #FBF8F1 0%, #F3EEE5 46%, #ECE5D8 100%);
+    background-attachment:fixed; min-height:100vh; -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .num{font-family:'Bai Jamjuree','Anuphan',sans-serif; font-feature-settings:"tnum";}
+
+  #app{max-width:620px; margin:0 auto; min-height:100vh; position:relative; padding-bottom:96px;}
+  header.top{padding:22px 20px 8px; display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
+  header.top .hi{font-size:13px; color:var(--ink-2); letter-spacing:.2px;}
+  header.top h1{font-size:21px; font-weight:700; margin:2px 0 0; letter-spacing:-.2px;}
+  header.top .date{font-size:12.5px; color:var(--ink-3); text-align:right; line-height:1.35; max-width:140px;}
+  main{padding:6px 16px 0;}
+
+  nav.bottom{position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex; justify-content:center; pointer-events:none; padding:0 0 max(10px, env(safe-area-inset-bottom));}
+  nav.bottom .bar{pointer-events:auto; width:min(620px, calc(100% - 24px)); margin:0 12px; background:var(--chrome); color:#C9C0B2; border-radius:22px; display:flex; justify-content:space-around; align-items:center; padding:9px 6px; box-shadow:var(--shadow-lg);}
+  nav.bottom button{background:none; border:0; color:inherit; font-family:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:5px 12px; border-radius:14px; font-size:11px; transition:.2s; flex:1;}
+  nav.bottom button svg{width:22px; height:22px; stroke-width:1.9;}
+  nav.bottom button.active{color:var(--chrome-ink);}
+  nav.bottom button.active svg{stroke-width:2.3;}
+
+  .fab{position:fixed; z-index:41; right:max(18px, calc((100% - 620px)/2 + 18px)); bottom:84px; width:56px; height:56px; border-radius:18px; border:0; cursor:pointer; background:var(--chrome); color:var(--chrome-ink); box-shadow:var(--shadow-lg); display:flex; align-items:center; justify-content:center; transition:transform .15s;}
+  .fab:active{transform:scale(.92);}
+  .fab svg{width:26px; height:26px; stroke-width:2.4;}
+
+  .section-title{font-size:13px; font-weight:600; color:var(--ink-2); margin:22px 4px 10px; letter-spacing:.3px; display:flex; align-items:center; justify-content:space-between;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow-sm); overflow:hidden;}
+
+  .stats{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
+  .stat{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 15px; box-shadow:var(--shadow-sm); position:relative; overflow:hidden;}
+  .stat .lbl{font-size:12px; color:var(--ink-2); display:flex; align-items:center; gap:7px;}
+  .stat .big{font-size:30px; font-weight:700; margin-top:6px; line-height:1;}
+  .stat .sub{font-size:11.5px; color:var(--ink-3); margin-top:5px;}
+  .stat .dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .stat.alert{background:#FDF1EE; border-color:#F2D5CD;}
+  .stat.good{background:#EFF6F2; border-color:#CFE6DC;}
+
+  .forgot-head{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--warn); margin:18px 4px 9px;}
+  .card.forgot{border-color:#EEC9C0; background:#FDF2EF;}
+
+  .task{display:flex; gap:11px; padding:12px 14px; align-items:flex-start; border-bottom:1px solid var(--line-2); cursor:pointer; transition:background .15s;}
+  .task:last-child{border-bottom:0;}
+  .task:active{background:var(--surface-2);}
+  .chk{width:22px; height:22px; border-radius:7px; border:2px solid var(--ink-3); flex:none; margin-top:1px; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;}
+  .chk svg{width:14px; height:14px; stroke:#fff; stroke-width:3; opacity:0;}
+  .task.done .chk{background:var(--q2); border-color:var(--q2);}
+  .task.done .chk svg{opacity:1;}
+  .task.done .t-title{text-decoration:line-through; color:var(--ink-3);}
+  .t-body{flex:1; min-width:0;}
+  .t-title{font-size:15px; font-weight:500; line-height:1.35;}
+  .t-meta{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; align-items:center;}
+  .tag{font-size:11px; padding:2.5px 9px; border-radius:999px; font-weight:500; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;}
+  .tag .d{width:7px; height:7px; border-radius:50%;}
+  .tag.q{color:#fff;}
+  .tag.soft{background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2);}
+  .tag.due{background:#FBF3EC; border:1px solid #EAD9C6; color:#9A6B33;}
+  .tag.over{background:#FBEAE6; border:1px solid #F0CFC6; color:#B33;}
+  .tag.deleg{background:#FBF6E8; border:1px solid #EBDDB6; color:#90701F;}
+  .tag.rep{background:#EEF4F1; border:1px solid #CFE6DC; color:#2E7D6B;}
+
+  .matrix{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .quad{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:11px 11px 7px; box-shadow:var(--shadow-sm); min-height:96px;}
+  .quad h4{margin:0 0 3px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px;}
+  .quad .qh-dot{width:9px;height:9px;border-radius:3px;}
+  .quad .qh-sub{font-size:10.5px; color:var(--ink-3); margin-bottom:9px;}
+  .quad .mtask{font-size:12.5px; padding:7px 8px; border-radius:9px; background:var(--surface-2); margin-bottom:6px; cursor:pointer; line-height:1.3; border:1px solid var(--line-2); display:flex; gap:6px; align-items:flex-start;}
+  .quad .mtask .mdot{width:7px; height:7px; border-radius:50%; flex:none; margin-top:5px;}
+  .quad .empty{font-size:11.5px; color:var(--ink-3); padding:6px 4px;}
+
+  .day{margin-bottom:14px;}
+  .day .dh{font-size:13px; font-weight:600; color:var(--ink); margin:0 4px 8px; display:flex; align-items:center; gap:8px;}
+  .day .dh .pill{font-size:10.5px; font-weight:500; color:var(--ink-3); background:var(--surface-2); border:1px solid var(--line); border-radius:999px; padding:2px 8px;}
+  .day.today .dh{color:var(--q2);}
+  .block{display:flex; gap:12px; padding:11px 13px; align-items:center; border-bottom:1px solid var(--line-2); cursor:pointer;}
+  .block:last-child{border-bottom:0;}
+  .block:active{background:var(--surface-2);}
+  .block .time{font-size:12px; color:var(--ink-2); width:96px; flex:none; line-height:1.3;}
+  .block .time b{display:block; font-weight:600; color:var(--ink); font-size:13px;}
+  .block .bbar{width:4px; align-self:stretch; border-radius:3px; flex:none;}
+  .block .blabel{font-size:14px; font-weight:500; flex:1;}
+  .block .bcat{font-size:11px; color:var(--ink-3); margin-top:1px;}
+
+  .biz-row{display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--line-2);}
+  .biz-row:last-child{border-bottom:0;}
+  .biz-row .bd{width:11px; height:11px; border-radius:4px; flex:none;}
+  .biz-row .bn{flex:1; font-size:14.5px; font-weight:500;}
+  .biz-row .cnt{font-size:13px; color:var(--ink-2); text-align:right;}
+  .biz-row .cnt b{font-weight:700; font-size:16px; color:var(--ink);}
+  .biz-row .ovd{font-size:11px; color:#B33; margin-top:2px;}
+
+  .card.deleg{border-color:#EBDDB6; background:#FCFAF1;}
+  .deleg-row{display:flex; gap:11px; padding:11px 14px; align-items:center; border-bottom:1px solid var(--line-2);}
+  .deleg-row:last-child{border-bottom:0;}
+  .deleg-row.due{background:#FBF6E8;}
+  .deleg-row .bd{width:11px;height:11px;border-radius:4px;flex:none;}
+  .deleg-row .dl-body{flex:1; min-width:0;}
+  .deleg-row .dl-title{font-size:14.5px; font-weight:500; line-height:1.3;}
+  .deleg-row .dl-meta{font-size:11.5px; color:var(--ink-2); margin-top:3px; line-height:1.35;}
+  .deleg-row .dl-acts{display:flex; gap:7px; flex:none;}
+  .dl-btn{width:36px;height:36px;border-radius:11px;border:1px solid var(--line); background:var(--surface); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; padding:0; transition:.12s;}
+  .dl-btn:active{transform:scale(.92);}
+  .dl-btn.ok{background:var(--q2); border-color:var(--q2);}
+  .dl-btn.ok svg{width:16px;height:16px;}
+
+  .rv{display:flex; gap:11px; padding:12px 14px; align-items:center; border-bottom:1px solid var(--line-2); cursor:pointer;}
+  .rv:last-child{border-bottom:0;}
+  .rv .rvchk{width:22px;height:22px;border-radius:50%;border:2px solid var(--ink-3); flex:none; display:flex; align-items:center; justify-content:center; transition:.15s;}
+  .rv .rvchk svg{width:13px;height:13px;stroke:#fff;stroke-width:3;opacity:0;}
+  .rv.on .rvchk{background:var(--q2); border-color:var(--q2);}
+  .rv.on .rvchk svg{opacity:1;}
+  .rv.on .rvt{color:var(--ink-3); text-decoration:line-through;}
+  .rvt{font-size:14px;}
+
+  .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 14px; border-bottom:1px solid var(--line-2);}
+  .set-row:last-child{border-bottom:0;}
+  .set-row .sl{font-size:14px;}
+  .set-row .ss{font-size:11.5px; color:var(--ink-3); margin-top:2px;}
+  .btn{font-family:inherit; font-size:14px; font-weight:600; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:11px 16px; cursor:pointer; transition:.15s;}
+  .btn:active{transform:scale(.97);}
+  .btn.dark{background:var(--chrome); color:var(--chrome-ink); border-color:var(--chrome);}
+  .btn.full{width:100%;}
+  .btn.sm{padding:8px 13px; font-size:13px;}
+  .btn.danger{color:#B33; border-color:#EECac6;}
+  .stepper{display:flex; align-items:center; gap:14px;}
+  .stepper button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:20px;cursor:pointer;color:var(--ink);line-height:1;}
+  .stepper .v{font-size:18px; font-weight:700; min-width:56px; text-align:center;}
+
+  .biz-edit{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line-2);}
+  .biz-edit input{flex:1; border:1px solid var(--line); border-radius:10px; padding:8px 11px; font-family:inherit; font-size:14px; background:var(--surface-2); color:var(--ink);}
+  .swatch{width:26px;height:26px;border-radius:8px;border:2px solid #fff; box-shadow:0 0 0 1px var(--line); cursor:pointer; flex:none;}
+  .del-x{background:none;border:0;color:var(--ink-3);cursor:pointer;padding:6px; font-size:18px;}
+
+  .empty-box{text-align:center; padding:40px 20px; color:var(--ink-3);}
+  .empty-box svg{width:40px;height:40px;opacity:.5; margin-bottom:10px;}
+  .empty-box .e1{font-size:14px; color:var(--ink-2);}
+
+  .overlay{position:fixed; inset:0; z-index:60; background:rgba(40,35,30,.42); backdrop-filter:blur(3px); display:none; align-items:flex-end; justify-content:center;}
+  .overlay.show{display:flex;}
+  .sheet{background:var(--surface); width:100%; max-width:620px; border-radius:24px 24px 0 0; max-height:92vh; overflow-y:auto; box-shadow:var(--shadow-lg); animation:up .26s cubic-bezier(.2,.7,.3,1); padding-bottom:max(18px, env(safe-area-inset-bottom));}
+  @keyframes up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  .sheet .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:11px auto 4px;}
+  .sheet .sh-head{display:flex; align-items:center; justify-content:space-between; padding:8px 18px 6px;}
+  .sheet .sh-head h3{font-size:17px; font-weight:700; margin:0;}
+  .sheet .body{padding:6px 18px 18px;}
+  .field{margin-top:15px;}
+  .field > label{font-size:12.5px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:7px; letter-spacing:.2px;}
+  .field input[type=text], .field input[type=date], .field input[type=time], .field input[type=password], .field textarea, .field select{
+    width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 13px; font-family:inherit; font-size:15px; background:var(--surface-2); color:var(--ink);}
+  .field textarea{min-height:64px; resize:vertical;}
+  .seg{display:flex; gap:7px; flex-wrap:wrap;}
+  .seg button{flex:1; min-width:60px; padding:10px 6px; border-radius:11px; border:1px solid var(--line); background:var(--surface-2); font-family:inherit; font-size:13.5px; cursor:pointer; color:var(--ink-2); transition:.12s; font-weight:500;}
+  .seg button.on{background:var(--chrome); color:var(--chrome-ink); border-color:var(--chrome);}
+  .seg.imp button.on{background:var(--q2); border-color:var(--q2);}
+  .seg.urg button.on{background:var(--q1); border-color:var(--q1);}
+  .seg.rep button.on{background:var(--q3); border-color:var(--q3);}
+  .days{display:flex; gap:6px;}
+  .days button{flex:1; aspect-ratio:1; border-radius:11px; border:1px solid var(--line); background:var(--surface-2); font-family:inherit; font-size:13px; cursor:pointer; color:var(--ink-2); transition:.12s; padding:0; font-weight:500;}
+  .days button.on{background:var(--chrome); color:var(--chrome-ink); border-color:var(--chrome);}
+  .toggle{display:flex; align-items:center; justify-content:space-between; padding:12px 13px; background:var(--surface-2); border:1px solid var(--line); border-radius:12px;}
+  .sw{width:46px;height:27px;border-radius:99px;background:var(--line); position:relative; transition:.18s; flex:none; cursor:pointer;}
+  .sw::after{content:'';position:absolute; width:21px;height:21px;border-radius:50%; background:#fff; top:3px; left:3px; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .toggle.on .sw, .sw.on{background:var(--q3);}
+  .toggle.on .sw::after, .sw.on::after{left:22px;}
+  .row2{display:flex; gap:10px;}
+  .row2 > *{flex:1;}
+  .sheet-actions{display:flex; gap:10px; margin-top:20px;}
+  .pickrow{display:flex; gap:9px; flex-wrap:wrap; margin-top:4px;}
+  .pickrow .swatch{width:30px;height:30px;}
+  .pickrow .swatch.sel{box-shadow:0 0 0 2px var(--ink);}
+
+  .fade-in{animation:fadeIn .4s ease both;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);}to{opacity:1; transform:translateY(0);}}
+  .toast{position:fixed; bottom:160px; left:50%; transform:translateX(-50%); background:var(--chrome); color:var(--chrome-ink); padding:11px 18px; border-radius:13px; font-size:13.5px; z-index:80; box-shadow:var(--shadow-lg); opacity:0; transition:.25s; pointer-events:none; max-width:90%; text-align:center;}
+  .toast.show{opacity:1; bottom:170px;}
+  .hint{font-size:12px; color:var(--ink-3); line-height:1.5; padding:2px 4px;}
+  .codebox{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Bai Jamjuree',monospace; font-size:12px; line-height:1.6; color:var(--ink-2); white-space:pre-wrap; margin-top:8px;}
+  .brief-line{display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:1px solid var(--line-2);}
+  .brief-line:last-child{border-bottom:0;}
+  .brief-line .bi{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;font-size:17px;}
+  .brief-line .bt{font-size:14px; line-height:1.3;}
+  .brief-line .bt b{font-weight:700;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div>
+      <div class="hi" id="greet">สวัสดีครับ</div>
+      <h1 id="headline">ศูนย์ควบคุมชีวิต</h1>
+    </div>
+    <div class="date" id="today-date"></div>
+  </header>
+  <main id="app-main"></main>
+</div>
+
+<button class="fab" id="fab" title="เพิ่มงาน">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<nav class="bottom">
+  <div class="bar">
+    <button data-tab="today" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg><span>วันนี้</span></button>
+    <button data-tab="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg><span>งาน</span></button>
+    <button data-tab="schedule"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>ตาราง</span></button>
+    <button data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/></svg><span>ภาพรวม</span></button>
+  </div>
+</nav>
+
+<!-- TASK MODAL -->
+<div class="overlay" id="task-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3 id="tm-title">เพิ่มงานใหม่</h3><button class="del-x" data-close="task-modal">✕</button></div>
+    <div class="body">
+      <div class="field"><label>เรื่องที่ต้องทำ</label><input type="text" id="tm-text" placeholder="เช่น ตามงานซ่อมเครื่องซัก สาขา 2" autocomplete="off"></div>
+      <div class="field"><label>ธุรกิจ / ด้าน</label><select id="tm-biz"></select></div>
+      <div class="field"><label>สำคัญแค่ไหน</label><div class="seg imp" id="tm-imp"><button data-v="1">น้อย</button><button data-v="2">ปานกลาง</button><button data-v="3">มาก</button></div></div>
+      <div class="field"><label>ด่วนแค่ไหน</label><div class="seg urg" id="tm-urg"><button data-v="1">ไม่ด่วน</button><button data-v="2">ปานกลาง</button><button data-v="3">ด่วน</button></div></div>
+      <div class="field"><label>ทำซ้ำ (กันลืมงานประจำ)</label><div class="seg rep" id="tm-rep"><button data-v="none">ครั้งเดียว</button><button data-v="daily">ทุกวัน</button><button data-v="weekly">ทุกสัปดาห์</button><button data-v="monthly">ทุกเดือน</button></div></div>
+      <div class="field">
+        <div class="toggle" id="tm-deleg-toggle"><div><div style="font-size:14px;font-weight:500">มอบหมายให้คนอื่น</div><div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">งานนี้ไม่ต้องทำเอง</div></div><div class="sw"></div></div>
+        <input type="text" id="tm-deleg-who" placeholder="มอบให้ใคร? เช่น พี่ช่าง, ทีม PR" style="margin-top:8px; display:none; width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-family:inherit; font-size:14px; background:var(--surface-2);">
+      </div>
+      <div class="field"><label>กำหนดเสร็จ (ถ้ามี)</label><input type="date" id="tm-due"></div>
+      <div class="field"><label>โน้ตเพิ่มเติม</label><textarea id="tm-notes" placeholder="รายละเอียด / ขั้นตอน"></textarea></div>
+      <button class="btn full" id="tm-cal" style="margin-top:16px">🔔 เตือนงานนี้ใน Google ปฏิทิน</button>
+      <div class="hint" style="margin-top:7px;text-align:center">เด้งเตือนในมือถือแม้ปิดแอปนี้ · งานทำซ้ำจะตั้งให้เตือนทุกครั้ง</div>
+      <div class="sheet-actions"><button class="btn danger" id="tm-delete" style="display:none">ลบ</button><button class="btn dark full" id="tm-save">บันทึก</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- BLOCK MODAL -->
+<div class="overlay" id="block-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3 id="bm-title">เพิ่มช่วงเวลา</h3><button class="del-x" data-close="block-modal">✕</button></div>
+    <div class="body">
+      <div class="field"><label>ช่วงเวลานี้ทำอะไร</label><input type="text" id="bm-label" placeholder="เช่น เวลาครอบครัว, ปิดบัญชี, ตรวจร้าน" autocomplete="off"></div>
+      <div class="field"><label>ธุรกิจ / ด้าน</label><select id="bm-biz"></select></div>
+      <div class="field"><label>วัน</label><div class="days" id="bm-days"></div></div>
+      <div class="field row2"><div><label>เริ่ม</label><input type="time" id="bm-start" value="18:30"></div><div><label>ถึง</label><input type="time" id="bm-end" value="20:30"></div></div>
+      <button class="btn full" id="bm-cal" style="margin-top:16px">🔔 เพิ่มลง Google ปฏิทิน (เตือนแม้ปิดแอป)</button>
+      <div class="hint" style="margin-top:7px;text-align:center">เหมาะกับเวลาครอบครัว — บันทึกในปฏิทินแล้วมือถือจะเตือนเองทุกครั้ง</div>
+      <div class="sheet-actions"><button class="btn danger" id="bm-delete" style="display:none">ลบ</button><button class="btn dark full" id="bm-save">บันทึก</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- BUSINESS MODAL -->
+<div class="overlay" id="biz-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3>จัดการธุรกิจ / ด้าน</h3><button class="del-x" data-close="biz-modal">✕</button></div>
+    <div class="body">
+      <div id="biz-list"></div>
+      <div class="field"><div class="row2"><input type="text" id="biz-new-name" placeholder="ชื่อธุรกิจ/ด้านใหม่" style="border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-family:inherit; font-size:14px; background:var(--surface-2);"><button class="btn dark" id="biz-add" style="flex:none">เพิ่ม</button></div></div>
+      <div class="pickrow" id="biz-new-colors" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SYNC MODAL -->
+<div class="overlay" id="sync-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3>ซิงค์ข้ามเครื่อง</h3><button class="del-x" data-close="sync-modal">✕</button></div>
+    <div class="body">
+      <div class="hint">ตั้ง <b>"รหัสซิงค์"</b> เป็นคำลับของคุณเอง (เช่น <i>phoney-spa-2569</i>) แล้วใส่รหัสเดียวกันในทุกเครื่อง ข้อมูลจะเห็นตรงกัน · ข้อมูลถูก<b>เข้ารหัสก่อนส่งขึ้นคลาวด์</b> คนอื่นเปิดไม่ได้แม้รู้รหัสโปรเจกต์</div>
+      <div class="field"><label>รหัสซิงค์ (จำให้ดี — ลืมแล้วเครื่องใหม่จะดึงข้อมูลไม่ได้)</label><input type="text" id="sync-code" placeholder="ตั้งคำลับของคุณ" autocomplete="off"></div>
+      <button class="btn dark full" id="sync-save" style="margin-top:14px">บันทึกรหัส & เปิดซิงค์</button>
+      <div class="row2" style="margin-top:10px">
+        <button class="btn" id="sync-up">⬆ ใช้ข้อมูลเครื่องนี้</button>
+        <button class="btn" id="sync-down">⬇ ดึงจากคลาวด์</button>
+      </div>
+      <div class="hint" style="margin-top:10px"><b>เครื่องแรก</b> กด "ใช้ข้อมูลเครื่องนี้" เพื่ออัปโหลด · <b>เครื่องที่สอง</b> ใส่รหัสเดิมแล้วกด "ดึงจากคลาวด์"</div>
+      <div id="sync-status2" class="hint" style="margin-top:12px; color:var(--ink-2); font-weight:600">—</div>
+      <div class="field"><label>ถ้า Firestore ล็อกอยู่ ให้เพิ่ม rule นี้</label>
+        <div class="codebox">match /lifeos/{id} {
+  allow read, write: if true;
+}</div>
+        <div class="hint" style="margin-top:6px">ปลอดภัยเพราะ id ของเอกสารคือรหัสลับที่เดาไม่ได้ + ข้อมูลถูกเข้ารหัสไว้แล้ว</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BRIEFING MODAL -->
+<div class="overlay" id="brief-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3 id="brief-title">สรุปวันนี้</h3><button class="del-x" data-close="brief-modal" id="brief-x">✕</button></div>
+    <div class="body" id="brief-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===========================================================
+   ศูนย์ควบคุมชีวิต — Personal Life OS  (v2)
+   • เก็บในเครื่อง (localStorage) + ซิงค์ข้ามเครื่องผ่าน Firebase (เข้ารหัส)
+   • งานทำซ้ำ / เตือน "ลืมรึเปล่า" / สรุปประจำวัน / แจ้งเตือน
+=========================================================== */
+
+/* ====== Firebase config (โปรเจกต์ geisha-coupon เดิม) ======
+   ถ้าจะแยกไปโปรเจกต์ใหม่ แก้ apiKey/projectId 3 บรรทัดนี้ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBhkUyMQLhWiwGIF7yTSnageSNXmJim6FQ",
+  authDomain: "geisha-coupon.firebaseapp.com",
+  projectId: "geisha-coupon"
+};
+
+const store = {
+  _m:{},
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return (k in this._m)?this._m[k]:null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){ this._m[k]=v; } }
+};
+const KEY='lifeos_state_v1', KEYL='lifeos_local_v1';
+const PALETTE=['#3D7DB3','#6C7BC4','#4FA1A8','#2E7D6B','#C68A3E','#E08A2E','#C77DA0','#A86CA0','#DB6B5E','#7C8C5A','#8A6E5A','#5C6B7A'];
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* ---------- seed ---------- */
+function seed(){
+  const b=(id,name,color,family)=>({id,name,color,family:!!family});
+  const businesses=[
+    b('b1','ซักผ้า – สาขา 1','#3D7DB3'),b('b2','ซักผ้า – สาขา 2','#6C7BC4'),b('b3','ซักผ้า – สาขา 3','#4FA1A8'),
+    b('b4','สปา 1','#C77DA0'),b('b5','สปา 2','#A86CA0'),b('b6','ร้านน้ำชา','#C68A3E'),
+    b('b7','โซล่าเซลล์','#E08A2E'),b('fam','ครอบครัว','#DB6B5E',true),b('me','ส่วนตัว / สุขภาพ','#7C8C5A'),
+  ];
+  const t=(o)=>Object.assign({id:uid(),importance:2,urgency:1,repeat:'none',delegate:false,delegateTo:'',due:'',notes:'',done:false,lastDone:0,lastFollowup:0,createdAt:Date.now()},o);
+  const tasks=[
+    t({text:'วิเคราะห์ยอด & ลูกค้าสปาเดือนนี้',businessId:'b4',importance:3,urgency:2}),
+    t({text:'ตามงานซ่อมเครื่องซัก สาขา 2',businessId:'b2',importance:2,urgency:3,delegate:true,delegateTo:'พี่ช่าง'}),
+    t({text:'ทำคอนเทนต์ PR ประจำสัปดาห์',businessId:'b4',importance:2,urgency:2,repeat:'weekly',delegate:true,delegateTo:'ทีม PR',due:todayStr()}),
+    t({text:'ปิดบัญชีรายรับ-รายจ่ายรายวัน',businessId:'me',importance:3,urgency:2,repeat:'daily',due:todayStr()}),
+    t({text:'พาลูกไปสวน / กิจกรรมกับลูก',businessId:'fam',importance:3,urgency:2}),
+    t({text:'ตรวจระบบโซล่าไซต์ใหม่',businessId:'b7',importance:2,urgency:1}),
+  ];
+  const k=(o)=>Object.assign({id:uid(),days:[],start:'09:00',end:'10:00'},o);
+  const blocks=[
+    k({label:'เวลาครอบครัว (มื้อเย็น + ลูก)',businessId:'fam',days:[0,1,2,3,4,5,6],start:'18:30',end:'20:30'}),
+    k({label:'เวลาครอบครัวสุดสัปดาห์',businessId:'fam',days:[0,6],start:'09:00',end:'12:00'}),
+    k({label:'ปิดบัญชี / เอกสาร',businessId:'me',days:[1,3,5],start:'09:00',end:'11:00'}),
+    k({label:'ตรวจร้าน + คุยทีม PR',businessId:'b4',days:[2,4],start:'14:00',end:'16:00'}),
+    k({label:'รีวิวสัปดาห์ + วางแผน',businessId:'me',days:[0],start:'20:30',end:'21:30'}),
+  ];
+  return {
+    businesses, tasks, blocks,
+    review:{ items:['ทบทวนงานค้างของทุกธุรกิจ','ตรวจยอด / บัญชีรายสัปดาห์','วางแผนคอนเทนต์ PR สัปดาห์หน้า','เช็กงานที่มอบหมายให้พนักงาน','กันเวลาครอบครัวสัปดาห์หน้า (ลูก + ภรรยา)','ดูแลตัวเอง / สุขภาพ'], done:{}, week:'' },
+    settings:{ name:'', familyGoal:18 },
+    _updatedAt: Date.now()
+  };
+}
+
+let S, LOCAL;
+function ensureShape(){
+  S.businesses=S.businesses||[]; S.tasks=S.tasks||[]; S.blocks=S.blocks||[];
+  S.settings=S.settings||{name:'',familyGoal:18};
+  S.review=S.review||{items:[],done:{},week:''};
+  S.tasks.forEach(t=>{ if(!('repeat'in t))t.repeat='none'; if(!('lastDone'in t))t.lastDone=0; if(!('lastFollowup'in t))t.lastFollowup=0; if(!('createdAt'in t))t.createdAt=Date.now(); });
+}
+function ensureLocal(){ LOCAL.syncCode=LOCAL.syncCode||''; if(!('notif'in LOCAL))LOCAL.notif=false; LOCAL.lastBriefing=LOCAL.lastBriefing||''; }
+function load(){
+  const raw=store.get(KEY);
+  if(raw){ try{ S=JSON.parse(raw); }catch(e){ S=seed(); } } else { S=seed(); }
+  ensureShape();
+  const rl=store.get(KEYL);
+  if(rl){ try{ LOCAL=JSON.parse(rl); }catch(e){ LOCAL={}; } } else { LOCAL={}; }
+  ensureLocal();
+}
+function persistState(){ store.set(KEY, JSON.stringify(S)); }
+function persistDevice(){ store.set(KEYL, JSON.stringify(LOCAL)); }
+function save(){ S._updatedAt=Date.now(); persistState(); scheduleSync(); }
+
+/* ---------- date helpers ---------- */
+const TH_DAY=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const TH_DAY_S=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const TH_MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DAY_ORDER=[1,2,3,4,5,6,0];
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function thaiDateLong(){ const d=new Date(); return `วัน${TH_DAY[d.getDay()]}<br>${d.getDate()} ${TH_MON[d.getMonth()]} ${d.getFullYear()+543}`; }
+function daysUntil(str){ if(!str) return null; const a=new Date(str+'T00:00:00'); const b=new Date(todayStr()+'T00:00:00'); return Math.round((a-b)/86400000); }
+function weekId(){ const d=new Date(); const o=new Date(d.getFullYear(),0,1); const day=Math.floor((d-o)/86400000); return d.getFullYear()+'-w'+Math.ceil((day+o.getDay()+1)/7); }
+function addInterval(dateStr,rep){ const d=new Date((dateStr||todayStr())+'T00:00:00'); if(rep==='daily')d.setDate(d.getDate()+1); else if(rep==='weekly')d.setDate(d.getDate()+7); else if(rep==='monthly')d.setMonth(d.getMonth()+1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function timeNow(){ const d=new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+
+/* ---------- Google Calendar links (เตือนแม้ปิดแอป) ---------- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+const RR_DAY=['SU','MO','TU','WE','TH','FR','SA'];
+function nextDateForDays(days){ const t=new Date(); t.setHours(0,0,0,0); for(let i=0;i<7;i++){ const d=new Date(t); d.setDate(t.getDate()+i); if(days.includes(d.getDay())) return d; } return t; }
+function rruleForDays(days){ if(!days.length) return ''; if(days.length>=7) return 'FREQ=DAILY'; return 'FREQ=WEEKLY;BYDAY='+days.slice().sort((a,b)=>a-b).map(d=>RR_DAY[d]).join(','); }
+function fmtDT(d,hhmm){ const [h,m]=hhmm.split(':').map(Number); return `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}T${pad2(h)}${pad2(m)}00`; }
+function gcalBase(text,details,start,end){ return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(text)}&details=${encodeURIComponent(details)}&dates=${start}/${end}&ctz=Asia/Bangkok`; }
+function gcalBlockUrl(bk){ const b=getBiz(bk.businessId); const d=nextDateForDays(bk.days); let url=gcalBase(bk.label+(b.family?' ❤️':''),'ศูนย์ควบคุมชีวิต · '+b.name, fmtDT(d,bk.start), fmtDT(d,bk.end)); const rr=rruleForDays(bk.days); if(rr) url+='&recur=RRULE:'+rr; return url; }
+function gcalTaskUrl(t){ const b=getBiz(t.businessId); const due=t.due||todayStr(); const d=new Date(due+'T00:00:00'); let url=gcalBase('📋 '+t.text,'ศูนย์ควบคุมชีวิต · '+b.name, fmtDT(d,'09:00'), fmtDT(d,'09:30')); const map={daily:'FREQ=DAILY',weekly:'FREQ=WEEKLY',monthly:'FREQ=MONTHLY'}; if(t.repeat&&map[t.repeat]) url+='&recur=RRULE:'+map[t.repeat]; return url; }
+
+/* ---------- logic ---------- */
+function getBiz(id){ return S.businesses.find(b=>b.id===id)||{name:'อื่นๆ',color:'#9AA096'}; }
+function effUrg(t){ let u=t.urgency; const du=daysUntil(t.due); if(du!==null){ if(du<=0)u=3; else if(du<=2)u=Math.max(u,2);} return u; }
+function isOver(t){ const du=daysUntil(t.due); return du!==null && du<0; }
+function isStale(t){ return !t.done && (!t.repeat||t.repeat==='none') && !t.due && (Date.now()-(t.createdAt||0) > 5*86400000); }
+function forgotten(t){ return !t.done && (isOver(t)||isStale(t)); }
+function isImportant(t){ return t.importance>=2; }
+function isUrgent(t){ return effUrg(t)>=2; }
+function quad(t){ const im=isImportant(t), ur=isUrgent(t); if(im&&ur)return 1; if(im&&!ur)return 2; if(!im&&ur)return 3; return 4; }
+function score(t){ return t.importance*10 + effUrg(t)*4 + (isOver(t)?6:0); }
+const QUAD={1:{name:'ทำเลย',color:'var(--q1)',sub:'ด่วน + สำคัญ'},2:{name:'วางแผน',color:'var(--q2)',sub:'สำคัญ ไม่ด่วน'},3:{name:'มอบหมาย',color:'var(--q3)',sub:'ด่วน ไม่สำคัญ'},4:{name:'ลด / ตัด',color:'var(--q4)',sub:'ไม่ด่วน ไม่สำคัญ'}};
+const REPNAME={daily:'ทุกวัน',weekly:'ทุกสัปดาห์',monthly:'ทุกเดือน'};
+function openTasks(){ return S.tasks.filter(t=>!t.done); }
+function mins(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+function familyHours(){ const fam=S.businesses.filter(b=>b.family).map(b=>b.id); let h=0; S.blocks.forEach(bk=>{ if(fam.includes(bk.businessId)){ const m=mins(bk.end)-mins(bk.start); if(m>0)h+=(m/60)*bk.days.length; } }); return Math.round(h*10)/10; }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- tags ---------- */
+function dueTag(t){ const du=daysUntil(t.due); if(du===null)return ''; if(du<0)return `<span class="tag over">เลย ${Math.abs(du)} วัน</span>`; if(du===0)return `<span class="tag due">วันนี้</span>`; if(du===1)return `<span class="tag due">พรุ่งนี้</span>`; return `<span class="tag due">อีก ${du} วัน</span>`; }
+function staleTag(t){ if(!isStale(t))return ''; const d=Math.floor((Date.now()-(t.createdAt||0))/86400000); return `<span class="tag over">ค้าง ${d} วัน</span>`; }
+function taskRow(t){
+  const b=getBiz(t.businessId); const q=QUAD[quad(t)];
+  return `<div class="task ${t.done?'done':''}" data-action="edit-task" data-id="${t.id}">
+    <button class="chk" data-action="toggle-done" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7"/></svg></button>
+    <div class="t-body"><div class="t-title">${esc(t.text)}</div>
+      <div class="t-meta">
+        <span class="tag soft"><span class="d" style="background:${b.color}"></span>${esc(b.name)}</span>
+        <span class="tag q" style="background:${q.color}">${q.name}</span>
+        ${t.repeat&&t.repeat!=='none'?`<span class="tag rep">↻ ${REPNAME[t.repeat]}</span>`:''}
+        ${t.delegate?`<span class="tag deleg">➜ ${esc(t.delegateTo||'มอบหมาย')}</span>`:''}
+        ${dueTag(t)}${staleTag(t)}
+      </div>
+    </div></div>`;
+}
+function emptyBox(a,b){ return `<div class="empty-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><div class="e1">${a}</div>${b?`<div style="font-size:12px;margin-top:3px">${b}</div>`:''}</div>`; }
+
+/* ---------- delegation follow-up ---------- */
+function delegatedOpen(){ return S.tasks.filter(t=>!t.done && t.delegate); }
+function followupDays(t){ const base=Math.max(t.createdAt||0, t.lastFollowup||0); return Math.floor((Date.now()-base)/86400000); }
+function needsFollowup(t){ return followupDays(t) >= 3; }
+function delegRow(t){
+  const b=getBiz(t.businessId); const age=followupDays(t); const due=needsFollowup(t);
+  const since = t.lastFollowup ? `ตามล่าสุด ${age} วันก่อน` : `มอบไป ${age} วัน`;
+  return `<div class="deleg-row ${due?'due':''}">
+    <span class="bd" style="background:${b.color}"></span>
+    <div class="dl-body">
+      <div class="dl-title">${esc(t.text)}</div>
+      <div class="dl-meta">➜ <b>${esc(t.delegateTo||'พนักงาน')}</b> · ${esc(b.name)} · ${since}${due?' · <span style="color:var(--warn);font-weight:600">ควรตามอีกครั้ง</span>':''}</div>
+    </div>
+    <div class="dl-acts">
+      <button class="dl-btn" data-action="followup" data-id="${t.id}" title="ตามแล้ววันนี้">📞</button>
+      <button class="dl-btn ok" data-action="toggle-done" data-id="${t.id}" title="เสร็จแล้ว"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></button>
+    </div>
+  </div>`;
+}
+
+/* ======================= RENDER ======================= */
+let TAB='today', taskFilter='all', taskView='list', taskStatus='open';
+function render(){
+  const m=document.getElementById('app-main'); m.className='fade-in'; void m.offsetWidth;
+  if(TAB==='today') m.innerHTML=viewToday();
+  else if(TAB==='tasks') m.innerHTML=viewTasks();
+  else if(TAB==='schedule') m.innerHTML=viewSchedule();
+  else if(TAB==='overview') m.innerHTML=viewOverview();
+  document.querySelectorAll('nav.bottom button').forEach(btn=>btn.classList.toggle('active', btn.dataset.tab===TAB));
+}
+
+function viewToday(){
+  const dow=new Date().getDay();
+  const open=openTasks();
+  const forgot=open.filter(forgotten).sort((a,b)=>score(b)-score(a));
+  const doNow=open.filter(t=>quad(t)===1).length;
+  const deleg=open.filter(t=>t.delegate).length;
+  const delegList=delegatedOpen().sort((a,b)=>(needsFollowup(b)-needsFollowup(a))||(followupDays(b)-followupDays(a)));
+  const fh=familyHours(); const goal=S.settings.familyGoal||0; const famOk=goal>0 && fh>=goal;
+  const top=[...open].sort((a,b)=>score(b)-score(a)).slice(0,6);
+  const todayBlocks=S.blocks.filter(bk=>bk.days.includes(dow)).sort((a,b)=>mins(a.start)-mins(b.start));
+
+  let html='';
+  if(forgot.length){
+    html+=`<div class="forgot-head">⚠️ ลืมรึเปล่า? · ${forgot.length} เรื่องที่ค้าง/เลยกำหนด</div>
+      <div class="card forgot">${forgot.slice(0,5).map(taskRow).join('')}</div>`;
+  }
+  html+=`<div class="stats" style="margin-top:${forgot.length?'18px':'0'}">
+    <div class="stat"><div class="lbl"><span class="dot" style="background:var(--q1)"></span>ต้องทำก่อน</div><div class="big num">${doNow}</div><div class="sub">งานด่วน+สำคัญ</div></div>
+    <div class="stat"><div class="lbl"><span class="dot" style="background:var(--q3)"></span>ควรมอบหมาย</div><div class="big num">${deleg}</div><div class="sub">เลิกทำเองทุกอย่าง</div></div>
+    <div class="stat ${famOk?'good':'alert'}" style="grid-column:1/-1"><div class="lbl"><span class="dot" style="background:var(--family)"></span>เวลาครอบครัว / สัปดาห์</div>
+      <div style="display:flex; align-items:baseline; gap:8px"><div class="big num">${fh}</div><div style="color:var(--ink-2);font-size:14px">ชม.${goal?` / เป้า ${goal} ชม.`:''}</div></div>
+      <div class="sub">${goal?(famOk?'✓ ถึงเป้าแล้ว — รักษาไว้นะครับ':`ยังขาดอีก ${Math.round((goal-fh)*10)/10} ชม. ลองกันเวลาเพิ่มในแท็บ "ตาราง"`):'ตั้งเป้าได้ในแท็บ "ภาพรวม"'}</div></div>
+  </div>
+  ${delegList.length?`<div class="section-title">ติดตามงานที่มอบหมาย${delegList.some(needsFollowup)?` · <span style="color:var(--warn)">${delegList.filter(needsFollowup).length} ควรตาม</span>`:''}</div>
+  <div class="card deleg">${delegList.slice(0,6).map(delegRow).join('')}${delegList.length>6?`<div class="hint" style="padding:10px 14px">+ อีก ${delegList.length-6} งาน — ดูทั้งหมดในแท็บ "งาน"</div>`:''}</div>`:''}
+  <div class="section-title">ทำก่อน (เรียงตามความสำคัญ)</div>
+  <div class="card">${top.length? top.map(taskRow).join('') : emptyBox('ยังไม่มีงานค้าง','กดปุ่ม + เพื่อเพิ่มงาน')}</div>
+  <div class="section-title">ตารางวันนี้ · วัน${TH_DAY[dow]}</div>
+  <div class="card">${todayBlocks.length? todayBlocks.map(bk=>blockRow(bk,false)).join('') : emptyBox('วันนี้ยังไม่มีช่วงเวลาที่กันไว้','ไปตั้งในแท็บ "ตาราง"')}</div>
+  <div style="height:8px"></div>`;
+  return html;
+}
+
+function viewTasks(){
+  let list=S.tasks.slice();
+  if(taskStatus==='open') list=list.filter(t=>!t.done);
+  if(taskStatus==='done') list=list.filter(t=>t.done);
+  if(taskFilter!=='all') list=list.filter(t=>t.businessId===taskFilter);
+  list.sort((a,b)=>score(b)-score(a));
+  const chips=`<div style="display:flex; gap:7px; overflow-x:auto; padding:2px 0 4px; margin:0 -2px;">
+    <button class="btn sm ${taskFilter==='all'?'dark':''}" data-action="filter" data-id="all" style="flex:none">ทั้งหมด</button>
+    ${S.businesses.map(b=>`<button class="btn sm ${taskFilter===b.id?'dark':''}" data-action="filter" data-id="${b.id}" style="flex:none;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${b.color}"></span>${esc(b.name)}</button>`).join('')}
+  </div>`;
+  const toolbar=`<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+    <div class="seg" style="flex:1"><button class="${taskView==='list'?'on':''}" data-action="tv" data-id="list">รายการ</button><button class="${taskView==='matrix'?'on':''}" data-action="tv" data-id="matrix">เมทริกซ์ 4 ช่อง</button></div>
+    <button class="btn sm ${taskStatus==='done'?'dark':''}" data-action="status" data-id="${taskStatus==='done'?'open':'done'}" style="flex:none">${taskStatus==='done'?'ดูที่ค้าง':'ดูที่เสร็จ'}</button></div>`;
+  let content;
+  if(taskView==='matrix') content=matrixView(taskFilter==='all'?openTasks():openTasks().filter(t=>t.businessId===taskFilter));
+  else content=`<div class="card" style="margin-top:12px">${list.length? list.map(taskRow).join('') : emptyBox('ไม่มีงานในหมวดนี้','')}</div>`;
+  return `${chips}${toolbar}${content}<div style="height:8px"></div>`;
+}
+function matrixView(open){
+  const g={1:[],2:[],3:[],4:[]}; open.forEach(t=>g[quad(t)].push(t));
+  Object.keys(g).forEach(k=>g[k].sort((a,b)=>score(b)-score(a)));
+  const cell=(q)=>{ const Q=QUAD[q]; const items=g[q];
+    return `<div class="quad"><h4><span class="qh-dot" style="background:${Q.color}"></span>${Q.name}</h4><div class="qh-sub">${Q.sub}</div>
+      ${items.length? items.map(t=>{const b=getBiz(t.businessId); return `<div class="mtask" data-action="edit-task" data-id="${t.id}"><span class="mdot" style="background:${b.color}"></span><span>${esc(t.text)}${t.delegate?` <span style="color:var(--q3)">➜</span>`:''}</span></div>`;}).join('') : `<div class="empty">—</div>`}</div>`; };
+  return `<div class="matrix" style="margin-top:12px">${cell(1)}${cell(2)}${cell(3)}${cell(4)}</div>
+  <div class="hint" style="margin-top:12px">💡 ช่อง <b style="color:var(--q2)">วางแผน</b> คือหัวใจ — งานสำคัญที่ยังไม่ด่วน (รวมเวลาครอบครัว) ถ้าไม่จัดเวลาไว้ มันจะกลายเป็นงานด่วนเสมอ · ช่อง <b style="color:var(--q3)">มอบหมาย</b> ให้ส่งต่อพนักงาน</div>`;
+}
+
+function blockRow(bk, showDays){
+  const b=getBiz(bk.businessId);
+  const daysTxt = bk.days.length===7?'ทุกวัน':(bk.days.length? [...bk.days].sort((x,y)=>DAY_ORDER.indexOf(x)-DAY_ORDER.indexOf(y)).map(d=>TH_DAY_S[d]).join(' '):'—');
+  return `<div class="block" data-action="edit-block" data-id="${bk.id}"><div class="bbar" style="background:${b.color}"></div>
+    <div class="time"><b>${bk.start}</b>${bk.end}</div>
+    <div style="flex:1"><div class="blabel">${esc(bk.label)}</div><div class="bcat">${esc(b.name)}${showDays?` · ${daysTxt}`:''}</div></div></div>`;
+}
+function viewSchedule(){
+  const dow=new Date().getDay();
+  let html='<div class="hint" style="margin:6px 4px 14px">ช่วงเวลาประจำสัปดาห์ของคุณ · กดที่ช่องเพื่อแก้ แล้วกด 🔔 เพื่อให้ Google ปฏิทินเตือนแม้ปิดแอป · กดปุ่ม + เพื่อเพิ่ม (เลือกได้หลายวันพร้อมกัน)</div>';
+  DAY_ORDER.forEach(d=>{ const blocks=S.blocks.filter(bk=>bk.days.includes(d)).sort((a,b)=>mins(a.start)-mins(b.start)); if(!blocks.length)return;
+    html+=`<div class="day ${d===dow?'today':''}"><div class="dh">วัน${TH_DAY[d]} ${d===dow?'<span class="pill">วันนี้</span>':''}</div><div class="card">${blocks.map(bk=>blockRow(bk,false)).join('')}</div></div>`; });
+  if(!S.blocks.length) html+=`<div class="card">${emptyBox('ยังไม่มีช่วงเวลา','กดปุ่ม + เพื่อกันเวลาให้ครอบครัว/งาน')}</div>`;
+  html+=`<button class="btn full" data-action="add-block" style="margin-top:10px"> + เพิ่มช่วงเวลา</button><div style="height:8px"></div>`;
+  return html;
+}
+
+function viewOverview(){
+  const rows=S.businesses.map(b=>{ const open=S.tasks.filter(t=>!t.done && t.businessId===b.id); const over=open.filter(isOver).length;
+    return `<div class="biz-row"><span class="bd" style="background:${b.color}"></span><div class="bn">${esc(b.name)}</div><div class="cnt"><b class="num">${open.length}</b> งานค้าง${over?`<div class="ovd num">${over} เลยกำหนด</div>`:''}</div></div>`; }).join('');
+  if(S.review.week!==weekId()){ S.review.done={}; S.review.week=weekId(); persistState(); }
+  const rv=S.review.items.map((it,i)=>{ const on=!!S.review.done[i];
+    return `<div class="rv ${on?'on':''}" data-action="review" data-id="${i}"><div class="rvchk"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7"/></svg></div><div class="rvt">${esc(it)}</div></div>`; }).join('');
+  const rvDone=Object.values(S.review.done).filter(Boolean).length;
+  const fh=familyHours(); const goal=S.settings.familyGoal||0;
+  const syncOn=!!LOCAL.syncCode;
+  return `
+  <div class="section-title">งานค้างของแต่ละธุรกิจ</div>
+  <div class="card">${rows}</div>
+  <div class="section-title">รีวิวประจำสัปดาห์ <span style="color:var(--ink-3);font-weight:400">${rvDone}/${S.review.items.length}</span></div>
+  <div class="card">${rv}</div>
+  <div class="hint" style="margin-top:8px">ทำเช็กลิสต์นี้สัปดาห์ละครั้ง (เช่น เย็นวันอาทิตย์) จะช่วยไม่ให้ปัญหาของธุรกิจไหนตกหล่น · รีเซ็ตอัตโนมัติทุกสัปดาห์</div>
+  <div class="section-title">ตั้งค่า</div>
+  <div class="card">
+    <div class="set-row"><div><div class="sl">ติดตั้งลงหน้าจอหลัก</div><div class="ss">เปิดเร็วเหมือนแอป + ใช้ออฟไลน์ได้</div></div><button class="btn sm dark" data-action="install">ติดตั้ง</button></div>
+    <div class="set-row"><div><div class="sl">ชื่อของคุณ</div><div class="ss">ใช้ทักทายในหน้าแรก</div></div>
+      <input type="text" id="set-name" value="${esc(S.settings.name)}" placeholder="ชื่อ" style="width:120px;border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-family:inherit;font-size:14px;background:var(--surface-2);text-align:right"></div>
+    <div class="set-row"><div><div class="sl">เป้าหมายเวลาครอบครัว / สัปดาห์</div><div class="ss">ตอนนี้กันไว้ ${fh} ชม.</div></div>
+      <div class="stepper"><button data-action="goal" data-id="-1">−</button><div class="v num">${goal}</div><button data-action="goal" data-id="1">+</button></div></div>
+    <div class="set-row"><div><div class="sl">ซิงค์ข้ามเครื่อง</div><div class="ss" id="sync-status">${syncOn?'เปิดอยู่ · เห็นตรงกันทุกเครื่อง':'ปิดอยู่ — เปิดเพื่อใช้ทั้งคอม+มือถือ'}</div></div>
+      <button class="btn sm ${syncOn?'':'dark'}" data-action="open-sync">${syncOn?'จัดการ':'เปิด'}</button></div>
+    <div class="set-row"><div><div class="sl">การแจ้งเตือน</div><div class="ss">เตือนงานถึงกำหนด (ขณะเปิดแอปค้างไว้)</div></div>
+      <div class="sw ${LOCAL.notif?'on':''}" data-action="notif-toggle"></div></div>
+    <div class="set-row"><div><div class="sl">จัดการธุรกิจ / ด้าน</div><div class="ss">เพิ่ม แก้ชื่อ เปลี่ยนสี ลบ</div></div><button class="btn sm" data-action="open-biz">จัดการ</button></div>
+    <div class="set-row"><div><div class="sl">สำรอง / ย้ายข้อมูล</div><div class="ss">ไฟล์ .json</div></div>
+      <div style="display:flex;gap:8px"><button class="btn sm" data-action="export">ส่งออก</button><button class="btn sm" data-action="import">นำเข้า</button></div></div>
+    <div class="set-row"><div><div class="sl" style="color:#B33">ล้างข้อมูลทั้งหมด</div><div class="ss">เริ่มใหม่จากศูนย์</div></div><button class="btn sm danger" data-action="reset">ล้าง</button></div>
+  </div>
+  <div class="hint" style="margin:14px 4px 4px;text-align:center">เปิดได้ทั้งคอมและมือถือ · ${syncOn?'ข้อมูลซิงค์อัตโนมัติ':'ข้อมูลเก็บในเครื่องนี้'}</div>
+  <div style="height:8px"></div>`;
+}
+
+/* ======================= EVENTS ======================= */
+document.querySelectorAll('nav.bottom button').forEach(btn=>btn.addEventListener('click',()=>{ TAB=btn.dataset.tab; render(); window.scrollTo({top:0,behavior:'smooth'}); }));
+document.getElementById('fab').addEventListener('click',()=>openTask());
+
+document.getElementById('app-main').addEventListener('click',e=>{
+  const el=e.target.closest('[data-action]'); if(!el) return;
+  const a=el.dataset.action, id=el.dataset.id;
+  if(a==='edit-task') openTask(id);
+  else if(a==='toggle-done') completeTask(id);
+  else if(a==='filter'){ taskFilter=id; render(); }
+  else if(a==='tv'){ taskView=id; render(); }
+  else if(a==='status'){ taskStatus=id; render(); }
+  else if(a==='edit-block') openBlock(id);
+  else if(a==='add-block') openBlock();
+  else if(a==='review'){ S.review.done[id]=!S.review.done[id]; save(); render(); }
+  else if(a==='followup'){ const t=S.tasks.find(x=>x.id===id); if(t){ t.lastFollowup=Date.now(); save(); render(); toast('บันทึกว่าตามแล้ววันนี้ 📞'); } }
+  else if(a==='goal'){ S.settings.familyGoal=Math.max(0,(S.settings.familyGoal||0)+parseInt(id)); save(); render(); }
+  else if(a==='open-biz') openBizModal();
+  else if(a==='install') installApp();
+  else if(a==='open-sync') openSync();
+  else if(a==='notif-toggle') toggleNotif();
+  else if(a==='export') doExport();
+  else if(a==='import') doImport();
+  else if(a==='reset'){ if(confirm('ล้างข้อมูลทั้งหมดและเริ่มใหม่?')){ S=seed(); save(); render(); toast('เริ่มใหม่แล้ว'); } }
+});
+document.getElementById('app-main').addEventListener('change',e=>{ if(e.target.id==='set-name'){ S.settings.name=e.target.value.trim(); save(); applyHeader(); } });
+
+function completeTask(id){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  if(t.repeat && t.repeat!=='none' && !t.done){ t.lastDone=Date.now(); t.due=addInterval(todayStr(),t.repeat); toast('เยี่ยม! เดี๋ยวเด้งเตือนรอบหน้า ↻'); }
+  else { t.done=!t.done; toast(t.done?'เสร็จแล้ว 🎉':'กลับมาทำต่อ'); }
+  save(); render();
+}
+
+/* ---------- TASK MODAL ---------- */
+let editTaskId=null, tmImp=2, tmUrg=1, tmRep='none', tmDeleg=false;
+function openTask(id){
+  editTaskId=id||null; const t=id?S.tasks.find(x=>x.id===id):null;
+  document.getElementById('tm-title').textContent=id?'แก้ไขงาน':'เพิ่มงานใหม่';
+  document.getElementById('tm-text').value=t?t.text:'';
+  document.getElementById('tm-notes').value=t?t.notes:'';
+  document.getElementById('tm-due').value=t?t.due:'';
+  document.getElementById('tm-deleg-who').value=t?(t.delegateTo||''):'';
+  tmImp=t?t.importance:2; tmUrg=t?t.urgency:1; tmRep=t?(t.repeat||'none'):'none'; tmDeleg=t?t.delegate:false;
+  const sel=document.getElementById('tm-biz'); sel.innerHTML=S.businesses.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('');
+  sel.value=t?t.businessId:(S.businesses[0]&&S.businesses[0].id);
+  segPaint('tm-imp',tmImp,true); segPaint('tm-urg',tmUrg,true); segPaint('tm-rep',tmRep,false); paintDeleg();
+  document.getElementById('tm-delete').style.display=id?'block':'none';
+  showOverlay('task-modal');
+}
+function segPaint(wrap,val,numeric){ document.querySelectorAll('#'+wrap+' button').forEach(b=>b.classList.toggle('on', numeric? (+b.dataset.v===val) : (b.dataset.v===val))); }
+function paintDeleg(){ document.getElementById('tm-deleg-toggle').classList.toggle('on',tmDeleg); document.getElementById('tm-deleg-who').style.display=tmDeleg?'block':'none'; }
+document.querySelectorAll('#tm-imp button').forEach(b=>b.onclick=()=>{tmImp=+b.dataset.v; segPaint('tm-imp',tmImp,true);});
+document.querySelectorAll('#tm-urg button').forEach(b=>b.onclick=()=>{tmUrg=+b.dataset.v; segPaint('tm-urg',tmUrg,true);});
+document.querySelectorAll('#tm-rep button').forEach(b=>b.onclick=()=>{tmRep=b.dataset.v; segPaint('tm-rep',tmRep,false);});
+document.getElementById('tm-deleg-toggle').onclick=()=>{tmDeleg=!tmDeleg; paintDeleg();};
+document.getElementById('tm-save').onclick=()=>{
+  const text=document.getElementById('tm-text').value.trim(); if(!text){ toast('ใส่เรื่องที่ต้องทำก่อนนะครับ'); return; }
+  let due=document.getElementById('tm-due').value;
+  if(tmRep!=='none' && !due) due=todayStr(); // งานทำซ้ำต้องมีจุดอ้างอิง
+  const data={ text, businessId:document.getElementById('tm-biz').value, importance:tmImp, urgency:tmUrg, repeat:tmRep,
+    delegate:tmDeleg, delegateTo:document.getElementById('tm-deleg-who').value.trim(), due, notes:document.getElementById('tm-notes').value.trim() };
+  if(editTaskId){ Object.assign(S.tasks.find(x=>x.id===editTaskId),data); }
+  else { S.tasks.push(Object.assign({id:uid(),done:false,lastDone:0,lastFollowup:0,createdAt:Date.now()},data)); }
+  save(); hideOverlay('task-modal'); render(); toast('บันทึกแล้ว');
+};
+document.getElementById('tm-delete').onclick=()=>{ if(editTaskId && confirm('ลบงานนี้?')){ S.tasks=S.tasks.filter(x=>x.id!==editTaskId); save(); hideOverlay('task-modal'); render(); toast('ลบแล้ว'); } };
+document.getElementById('tm-cal').onclick=()=>{ const text=document.getElementById('tm-text').value.trim(); if(!text){ toast('ใส่เรื่องที่ต้องทำก่อนนะครับ'); return; } let due=document.getElementById('tm-due').value||todayStr(); const t={text,businessId:document.getElementById('tm-biz').value,due,repeat:tmRep}; window.open(gcalTaskUrl(t),'_blank'); toast('เปิด Google ปฏิทิน...'); };
+
+/* ---------- BLOCK MODAL ---------- */
+let editBlockId=null, bmDays=[];
+function openBlock(id){
+  editBlockId=id||null; const bk=id?S.blocks.find(x=>x.id===id):null;
+  document.getElementById('bm-title').textContent=id?'แก้ไขช่วงเวลา':'เพิ่มช่วงเวลา';
+  document.getElementById('bm-label').value=bk?bk.label:''; document.getElementById('bm-start').value=bk?bk.start:'18:30'; document.getElementById('bm-end').value=bk?bk.end:'20:30';
+  bmDays=bk?bk.days.slice():[];
+  const sel=document.getElementById('bm-biz'); sel.innerHTML=S.businesses.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('');
+  sel.value=bk?bk.businessId:(S.businesses.find(b=>b.family)||S.businesses[0]).id;
+  document.getElementById('bm-days').innerHTML=DAY_ORDER.map(d=>`<button data-d="${d}">${TH_DAY_S[d]}</button>`).join('');
+  document.querySelectorAll('#bm-days button').forEach(b=>{ const d=+b.dataset.d; b.classList.toggle('on',bmDays.includes(d)); b.onclick=()=>{ if(bmDays.includes(d))bmDays=bmDays.filter(x=>x!==d); else bmDays.push(d); b.classList.toggle('on'); }; });
+  document.getElementById('bm-delete').style.display=id?'block':'none';
+  showOverlay('block-modal');
+}
+document.getElementById('bm-save').onclick=()=>{
+  const label=document.getElementById('bm-label').value.trim(); if(!label){ toast('ใส่ชื่อช่วงเวลาก่อนนะครับ'); return; }
+  if(!bmDays.length){ toast('เลือกอย่างน้อย 1 วัน'); return; }
+  const data={ label, businessId:document.getElementById('bm-biz').value, days:bmDays.slice(), start:document.getElementById('bm-start').value, end:document.getElementById('bm-end').value };
+  if(editBlockId){ Object.assign(S.blocks.find(x=>x.id===editBlockId),data); } else { S.blocks.push(Object.assign({id:uid()},data)); }
+  save(); hideOverlay('block-modal'); render(); toast('บันทึกแล้ว');
+};
+document.getElementById('bm-delete').onclick=()=>{ if(editBlockId && confirm('ลบช่วงเวลานี้?')){ S.blocks=S.blocks.filter(x=>x.id!==editBlockId); save(); hideOverlay('block-modal'); render(); toast('ลบแล้ว'); } };
+document.getElementById('bm-cal').onclick=()=>{ const label=document.getElementById('bm-label').value.trim(); if(!label){ toast('ใส่ชื่อช่วงเวลาก่อนนะครับ'); return; } if(!bmDays.length){ toast('เลือกอย่างน้อย 1 วัน'); return; } const bk={label,businessId:document.getElementById('bm-biz').value,days:bmDays.slice(),start:document.getElementById('bm-start').value,end:document.getElementById('bm-end').value}; window.open(gcalBlockUrl(bk),'_blank'); toast('เปิด Google ปฏิทิน...'); };
+
+/* ---------- BUSINESS MODAL ---------- */
+let newBizColor=PALETTE[0];
+function openBizModal(){ renderBizList(); paintNewColors(); showOverlay('biz-modal'); }
+function renderBizList(){
+  document.getElementById('biz-list').innerHTML=S.businesses.map(b=>`<div class="biz-edit"><span class="swatch" style="background:${b.color}" data-bizcolor="${b.id}"></span><input type="text" value="${esc(b.name)}" data-bizname="${b.id}">${b.family?'<span style="font-size:11px;color:var(--family);font-weight:600">ครอบครัว</span>':`<button class="del-x" data-bizdel="${b.id}">🗑</button>`}</div>`).join('');
+  document.querySelectorAll('[data-bizname]').forEach(inp=>{ inp.onchange=()=>{ const b=S.businesses.find(x=>x.id===inp.dataset.bizname); if(b){b.name=inp.value.trim()||b.name; save(); render();} }; });
+  document.querySelectorAll('[data-bizdel]').forEach(btn=>{ btn.onclick=()=>{ const id=btn.dataset.bizdel; if(S.tasks.some(t=>t.businessId===id)||S.blocks.some(k=>k.businessId===id)){ if(!confirm('ธุรกิจนี้มีงาน/ช่วงเวลาผูกอยู่ ลบเลย?'))return; } S.businesses=S.businesses.filter(x=>x.id!==id); save(); renderBizList(); render(); }; });
+  document.querySelectorAll('[data-bizcolor]').forEach(sw=>{ sw.onclick=()=>cycleColor(sw.dataset.bizcolor); });
+}
+function cycleColor(id){ const b=S.businesses.find(x=>x.id===id); if(!b)return; const i=PALETTE.indexOf(b.color); b.color=PALETTE[(i+1)%PALETTE.length]; save(); renderBizList(); render(); }
+function paintNewColors(){ document.getElementById('biz-new-colors').innerHTML=PALETTE.map(c=>`<span class="swatch ${c===newBizColor?'sel':''}" style="background:${c}" data-newc="${c}"></span>`).join(''); document.querySelectorAll('[data-newc]').forEach(s=>s.onclick=()=>{newBizColor=s.dataset.newc; paintNewColors();}); }
+document.getElementById('biz-add').onclick=()=>{ const name=document.getElementById('biz-new-name').value.trim(); if(!name){ toast('ใส่ชื่อก่อนนะครับ'); return; } S.businesses.push({id:uid(),name,color:newBizColor,family:false}); document.getElementById('biz-new-name').value=''; save(); renderBizList(); render(); toast('เพิ่มแล้ว'); };
+
+/* ---------- export / import ---------- */
+function doExport(){ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='life-os-backup-'+todayStr()+'.json'; a.click(); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); }
+function doImport(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{ try{ const d=JSON.parse(r.result); if(d.businesses&&d.tasks){ S=d; ensureShape(); save(); render(); toast('นำเข้าข้อมูลสำเร็จ'); } else toast('ไฟล์ไม่ถูกต้อง'); }catch(e){ toast('อ่านไฟล์ไม่ได้'); } }; r.readAsText(f); };
+  inp.click();
+}
+
+/* =================== FIREBASE SYNC (เข้ารหัส) =================== */
+let fbApp=null, fdb=null;
+function initFirebase(){ try{ if(!window.firebase) return false; if(!fbApp){ fbApp=firebase.initializeApp(FIREBASE_CONFIG); fdb=firebase.firestore(); } return true; }catch(e){ console.warn('fb',e); return false; } }
+function b64(bytes){ let s=''; const a=new Uint8Array(bytes); for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]); return btoa(s); }
+function unb64(str){ const bin=atob(str); const a=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i); return a; }
+async function deriveKey(code){ const enc=new TextEncoder(); const base=await crypto.subtle.importKey('raw',enc.encode(code),'PBKDF2',false,['deriveKey']); return crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('lifeos-salt-v1'),iterations:100000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']); }
+async function encryptState(obj,code){ const key=await deriveKey(code); const iv=crypto.getRandomValues(new Uint8Array(12)); const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj))); return { iv:b64(iv), data:b64(ct) }; }
+async function decryptState(blob,code){ const key=await deriveKey(code); const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(blob.iv)},key,unb64(blob.data)); return JSON.parse(new TextDecoder().decode(pt)); }
+async function codeHash(code){ const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('lifeos-doc-'+code)); return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,40); }
+function cloudCopy(){ const c=JSON.parse(JSON.stringify(S)); delete c.sync; return c; }
+
+let pushT=null;
+function scheduleSync(){ if(!LOCAL.syncCode) return; clearTimeout(pushT); pushT=setTimeout(()=>pushSync(),1500); }
+function setSync(msg){ const a=document.getElementById('sync-status'); const b=document.getElementById('sync-status2'); if(a)a.textContent=msg; if(b)b.textContent=msg; }
+async function pushSync(){
+  if(!LOCAL.syncCode){ return; }
+  if(!crypto.subtle){ setSync('ต้องเปิดผ่าน https ถึงจะเข้ารหัสได้'); return; }
+  if(!initFirebase()){ setSync('โหลด Firebase ไม่ได้ (ออฟไลน์?)'); return; }
+  try{ const code=LOCAL.syncCode; const blob=await encryptState(cloudCopy(),code); const id=await codeHash(code);
+    await fdb.collection('lifeos').doc(id).set({ blob, updatedAt:S._updatedAt||Date.now() }); setSync('ซิงค์แล้ว · '+timeNow()); }
+  catch(e){ setSync('ซิงค์ไม่สำเร็จ'); console.warn(e); }
+}
+async function pullSync(force){
+  if(!LOCAL.syncCode) return;
+  if(!crypto.subtle){ setSync('ต้องเปิดผ่าน https'); return; }
+  if(!initFirebase()){ setSync('โหลด Firebase ไม่ได้ (ออฟไลน์?)'); return; }
+  try{ const code=LOCAL.syncCode; const id=await codeHash(code); const snap=await fdb.collection('lifeos').doc(id).get();
+    if(snap.exists){ const d=snap.data(); const remote=await decryptState(d.blob,code); const rTs=d.updatedAt||0, lTs=S._updatedAt||0;
+      if(force || rTs>lTs){ S=remote; ensureShape(); S._updatedAt=rTs; persistState(); render(); setSync('ดึงข้อมูลล่าสุดแล้ว · '+timeNow()); }
+      else setSync('ข้อมูลตรงกันแล้ว · '+timeNow()); }
+    else { setSync('ยังไม่มีข้อมูลบนคลาวด์ — อัปโหลดให้แล้ว'); pushSync(); }
+  }catch(e){ setSync('ดึงไม่สำเร็จ (รหัสซิงค์ไม่ตรง?)'); console.warn(e); }
+}
+function openSync(){ document.getElementById('sync-code').value=LOCAL.syncCode||''; document.getElementById('sync-status2').textContent=LOCAL.syncCode?'เปิดใช้งานอยู่':'ยังไม่ได้ตั้งรหัส'; showOverlay('sync-modal'); }
+document.getElementById('sync-save').onclick=()=>{ const v=document.getElementById('sync-code').value.trim(); if(!v){ toast('ตั้งรหัสซิงค์ก่อนนะครับ'); return; } LOCAL.syncCode=v; persistDevice(); setSync('เปิดซิงค์แล้ว'); toast('เปิดซิงค์แล้ว'); render(); pullSync(false); };
+document.getElementById('sync-up').onclick=()=>{ const v=document.getElementById('sync-code').value.trim(); if(!v){ toast('ตั้งรหัสก่อน'); return;} LOCAL.syncCode=v; persistDevice(); S._updatedAt=Date.now(); persistState(); pushSync(); toast('กำลังอัปโหลด...'); };
+document.getElementById('sync-down').onclick=()=>{ const v=document.getElementById('sync-code').value.trim(); if(!v){ toast('ตั้งรหัสก่อน'); return;} LOCAL.syncCode=v; persistDevice(); pullSync(true); toast('กำลังดึงข้อมูล...'); };
+
+/* =================== NOTIFICATIONS (foreground) =================== */
+let notifTimer=null; const notified=new Set();
+function toggleNotif(){
+  if(!('Notification'in window)){ toast('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+  if(!LOCAL.notif){ Notification.requestPermission().then(p=>{ if(p==='granted'){ LOCAL.notif=true; persistDevice(); startNotif(); render(); toast('เปิดแจ้งเตือนแล้ว'); } else { toast('ไม่ได้รับอนุญาตแจ้งเตือน'); } }); }
+  else { LOCAL.notif=false; persistDevice(); if(notifTimer)clearInterval(notifTimer); render(); toast('ปิดแจ้งเตือนแล้ว'); }
+}
+function startNotif(){ if(notifTimer)clearInterval(notifTimer); if(!LOCAL.notif)return; checkNotif(); notifTimer=setInterval(checkNotif,60000); }
+function checkNotif(){
+  if(!LOCAL.notif || !('Notification'in window) || Notification.permission!=='granted') return;
+  const t=todayStr();
+  openTasks().forEach(tk=>{ if(tk.due===t && !notified.has('t'+tk.id+t)){ notified.add('t'+tk.id+t); try{ new Notification('ถึงกำหนดวันนี้',{body:tk.text}); }catch(e){} } });
+  const now=new Date(); const dow=now.getDay(); const cur=now.getHours()*60+now.getMinutes();
+  S.blocks.filter(b=>b.days.includes(dow)).forEach(b=>{ const diff=mins(b.start)-cur; if(diff>=0&&diff<=20 && !notified.has('b'+b.id+t)){ notified.add('b'+b.id+t); try{ new Notification('ใกล้ถึงเวลา · '+b.start,{body:b.label}); }catch(e){} } });
+}
+
+/* =================== DAILY BRIEFING =================== */
+function maybeBriefing(){ if(LOCAL.lastBriefing===todayStr()) return; showBriefing(); }
+function showBriefing(){
+  const open=openTasks();
+  const forgot=open.filter(forgotten);
+  const doNow=[...open].filter(t=>quad(t)===1).sort((a,b)=>score(b)-score(a));
+  const dow=new Date().getDay();
+  const fam=S.blocks.filter(b=>b.days.includes(dow)&&getBiz(b.businessId).family).sort((a,b)=>mins(a.start)-mins(b.start));
+  const top=[...open].sort((a,b)=>score(b)-score(a)).slice(0,3);
+  const h=new Date().getHours(); let g=h<12?'อรุณสวัสดิ์':h<17?'สวัสดีตอนบ่าย':'สวัสดีตอนเย็น';
+  let body=`<div style="font-size:13px;color:var(--ink-2);margin:2px 0 10px">${g}ครับ${S.settings.name?' คุณ'+esc(S.settings.name):''} · นี่คือสิ่งที่สำคัญวันนี้</div>`;
+  body+=`<div style="background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:4px 14px">`;
+  if(forgot.length) body+=line('⚠️','#FBEAE6',`<b>${forgot.length} เรื่องค้าง/เลยกำหนด</b> — รีบเคลียร์ก่อนนะครับ`);
+  body+=line('🔥','#FBEAE6',`ต้องทำก่อนวันนี้ <b>${doNow.length}</b> งาน`);
+  if(fam.length) body+=line('❤️','#FDF2EF',`เวลาครอบครัว <b>${fam[0].start}–${fam[0].end}</b> น. อย่าพลาดนะครับ`);
+  else body+=line('❤️','#FDF2EF',`วันนี้ยังไม่ได้กันเวลาครอบครัว`);
+  const fup=delegatedOpen().filter(needsFollowup).length;
+  if(fup) body+=line('📞','#FBF6E8',`มีงานมอบหมาย <b>${fup}</b> งานที่ควรตามความคืบหน้า`);
+  body+=`</div>`;
+  if(top.length){ body+=`<div style="font-size:12.5px;font-weight:600;color:var(--ink-2);margin:16px 4px 6px">3 อันดับแรกที่ควรเริ่ม</div><div class="card">${top.map(taskRow).join('')}</div>`; }
+  body+=`<button class="btn dark full" id="brief-go" style="margin-top:18px">เริ่มวันนี้กันเลย</button>`;
+  document.getElementById('brief-body').innerHTML=body;
+  showOverlay('brief-modal');
+  document.getElementById('brief-go').onclick=()=>{ LOCAL.lastBriefing=todayStr(); persistDevice(); hideOverlay('brief-modal'); };
+}
+function line(icon,bg,txt){ return `<div class="brief-line"><div class="bi" style="background:${bg}">${icon}</div><div class="bt">${txt}</div></div>`; }
+document.getElementById('brief-x').onclick=()=>{ LOCAL.lastBriefing=todayStr(); persistDevice(); };
+
+/* ---------- overlay / toast / header ---------- */
+function showOverlay(id){ document.getElementById(id).classList.add('show'); }
+function hideOverlay(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>hideOverlay(b.dataset.close));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) hideOverlay(o.id); }));
+let toastT; function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1900); }
+function applyHeader(){ document.getElementById('today-date').innerHTML=thaiDateLong(); const h=new Date().getHours(); let g=h<12?'อรุณสวัสดิ์ครับ':h<17?'สวัสดีตอนบ่ายครับ':'สวัสดีตอนเย็นครับ'; document.getElementById('greet').textContent=S.settings.name?`${g} คุณ${S.settings.name}`:g; }
+
+/* ---------- init ---------- */
+load(); applyHeader(); render();
+window.addEventListener('load',()=>{ if(LOCAL.syncCode) pullSync(false); startNotif(); maybeBriefing(); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ if(LOCAL.syncCode) pullSync(false); applyHeader(); } });
+
+/* ---------- PWA: service worker + ติดตั้งลงหน้าจอหลัก ---------- */
+let deferredPrompt=null;
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; });
+window.addEventListener('appinstalled',()=>{ deferredPrompt=null; toast('ติดตั้งแล้ว 🎉'); });
+function installApp(){
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{ deferredPrompt=null; }); }
+  else if(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone){ toast('ติดตั้งไว้แล้วครับ ✓'); }
+  else { toast('ถ้าไม่มีหน้าต่างเด้ง: เปิดเมนู ⋮ ของ Chrome → "ติดตั้งแอป" หรือ "เพิ่มลงในหน้าจอหลัก"'); }
+}
+</script>
+</body>
+</html>
