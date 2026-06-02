@@ -432,7 +432,7 @@
     <div class="sh-head"><h3 id="ev-title-h">เพิ่มนัดหมาย / งานประจำ</h3><button class="del-x" data-close="event-modal">✕</button></div>
     <div class="body">
       <div class="field"><label>เรื่อง</label><input type="text" id="ev-text" placeholder="เช่น ประชุมทีม, จ่ายค่าเช่า, นัดหมอ" autocomplete="off"></div>
-      <div class="field"><label>ธุรกิจ / ด้าน</label><select id="ev-biz"></select></div>
+      <div class="field"><label>ธุรกิจ / ด้าน <span id="ev-biz-hint" style="color:var(--ink-3);font-weight:400"></span></label><div class="chips" id="ev-biz-chips"></div></div>
       <div class="field"><label>ประเภท</label><div class="seg" id="ev-rep"><button data-v="none">นัดครั้งเดียว</button><button data-v="weekly">ทุกสัปดาห์</button><button data-v="monthly">ทุกเดือน</button></div></div>
       <div class="field" id="ev-date-field"><label>วันที่นัด</label><input type="date" id="ev-date"></div>
       <div class="field" id="ev-weekly-field" style="display:none"><label>ทำทุกวัน (เลือกได้หลายวัน)</label><div class="days" id="ev-weekdays"></div></div>
@@ -982,7 +982,7 @@ function viewCalendar(){
 }
 
 /* ---------- EVENT MODAL ---------- */
-let editEventId=null, evRep='none', evWeekdays=[], evMonthdays=[];
+let editEventId=null, evRep='none', evWeekdays=[], evMonthdays=[], evBiz=[];
 function openEvent(id, presetDate){
   editEventId=id||null; const ev=id?S.events.find(x=>x.id===id):null;
   document.getElementById('ev-title-h').textContent=id?'แก้ไขรายการ':'เพิ่มนัดหมาย / งานประจำ';
@@ -991,8 +991,8 @@ function openEvent(id, presetDate){
   document.getElementById('ev-time').value=ev?(ev.time||''):'';
   document.getElementById('ev-date').value=(ev&&ev.date)?ev.date:(presetDate||todayStr());
   evRep=ev?(ev.repeat||'none'):'none'; evWeekdays=(ev&&ev.weekdays)?ev.weekdays.slice():[]; evMonthdays=(ev&&ev.monthdays)?ev.monthdays.slice():[];
-  const sel=document.getElementById('ev-biz'); sel.innerHTML=S.businesses.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('');
-  sel.value=ev?ev.businessId:(S.businesses[0]&&S.businesses[0].id);
+  evBiz = ev ? [ev.businessId] : (S.businesses[0]?[S.businesses[0].id]:[]);
+  paintEvBizChips(!!id);
   document.getElementById('ev-weekdays').innerHTML=DAY_ORDER.map(d=>`<button data-d="${d}">${TH_DAY_S[d]}</button>`).join('');
   document.getElementById('ev-monthdays').innerHTML=Array.from({length:31},(_,i)=>i+1).map(n=>`<button data-md="${n}">${n}</button>`).join('');
   document.querySelectorAll('#ev-weekdays button').forEach(b=>{ const d=+b.dataset.d; b.classList.toggle('on',evWeekdays.includes(d)); b.onclick=()=>{ if(evWeekdays.includes(d))evWeekdays=evWeekdays.filter(x=>x!==d); else evWeekdays.push(d); b.classList.toggle('on'); }; });
@@ -1005,17 +1005,30 @@ function paintEvRep(){
   document.getElementById('ev-weekly-field').style.display=evRep==='weekly'?'block':'none';
   document.getElementById('ev-monthly-field').style.display=evRep==='monthly'?'block':'none';
 }
+function paintEvBizChips(isEdit){
+  const wrap=document.getElementById('ev-biz-chips');
+  wrap.innerHTML=S.businesses.map(b=>`<button type="button" class="chip ${evBiz.includes(b.id)?'on':''}" data-evbizchip="${b.id}"><span class="cdot" style="background:${b.color}"></span>${esc(b.name)}<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></button>`).join('');
+  document.getElementById('ev-biz-hint').textContent = isEdit ? '' : '(เลือกได้หลายร้าน)';
+  wrap.querySelectorAll('[data-evbizchip]').forEach(ch=>{ ch.onclick=()=>{
+    const id=ch.dataset.evbizchip;
+    if(isEdit){ evBiz=[id]; }
+    else { if(evBiz.includes(id)) evBiz=evBiz.filter(x=>x!==id); else evBiz.push(id); if(!evBiz.length) evBiz=[id]; }
+    paintEvBizChips(isEdit);
+  }; });
+}
 document.querySelectorAll('#ev-rep button').forEach(b=>b.onclick=()=>{ evRep=b.dataset.v; paintEvRep(); });
-function evFormData(){ return { title:document.getElementById('ev-text').value.trim(), businessId:document.getElementById('ev-biz').value, repeat:evRep, weekdays:evWeekdays.slice(), monthdays:evMonthdays.slice(), date:(evRep==='none'?(document.getElementById('ev-date').value||todayStr()):''), time:document.getElementById('ev-time').value, notes:document.getElementById('ev-notes').value.trim() }; }
+function evFormData(){ return { title:document.getElementById('ev-text').value.trim(), repeat:evRep, weekdays:evWeekdays.slice(), monthdays:evMonthdays.slice(), date:(evRep==='none'?(document.getElementById('ev-date').value||todayStr()):''), time:document.getElementById('ev-time').value, notes:document.getElementById('ev-notes').value.trim() }; }
 document.getElementById('ev-save').onclick=()=>{
   const d=evFormData(); if(!d.title){ toast('ใส่เรื่องก่อนนะครับ'); return; }
+  if(!evBiz.length){ toast('เลือกธุรกิจอย่างน้อย 1'); return; }
   if(evRep==='weekly' && !evWeekdays.length){ toast('เลือกวันอย่างน้อย 1 วัน'); return; }
   if(evRep==='monthly' && !evMonthdays.length){ toast('เลือกวันที่อย่างน้อย 1 วัน'); return; }
-  if(editEventId){ Object.assign(S.events.find(x=>x.id===editEventId),d); } else { S.events.push(Object.assign({id:uid(),createdAt:Date.now()},d)); }
-  save(); hideOverlay('event-modal'); render(); toast('บันทึกแล้ว');
+  if(editEventId){ Object.assign(S.events.find(x=>x.id===editEventId), d, {businessId:evBiz[0]}); }
+  else { evBiz.forEach(bid=>{ S.events.push(Object.assign({id:uid(),createdAt:Date.now(),businessId:bid},d)); }); }
+  save(); hideOverlay('event-modal'); render(); toast(editEventId?'บันทึกแล้ว':(evBiz.length>1?`เพิ่มให้ ${evBiz.length} ร้านแล้ว`:'บันทึกแล้ว'));
 };
 document.getElementById('ev-delete').onclick=()=>{ if(editEventId && confirm('ลบรายการนี้?')){ S.events=S.events.filter(x=>x.id!==editEventId); save(); hideOverlay('event-modal'); render(); toast('ลบแล้ว'); } };
-document.getElementById('ev-cal').onclick=()=>{ const d=evFormData(); if(!d.title){ toast('ใส่เรื่องก่อนนะครับ'); return; } window.open(gcalEventUrl(d),'_blank'); toast('เปิด Google ปฏิทิน...'); };
+document.getElementById('ev-cal').onclick=()=>{ const d=evFormData(); if(!d.title){ toast('ใส่เรื่องก่อนนะครับ'); return; } if(!evBiz.length){ toast('เลือกธุรกิจก่อนนะครับ'); return; } window.open(gcalEventUrl(Object.assign({businessId:evBiz[0]},d)),'_blank'); toast('เปิด Google ปฏิทิน...'); };
 
 /* =================== SEARCH / เช็กวันทำงาน =================== */
 function searchAll(q){
