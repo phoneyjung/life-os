@@ -129,6 +129,19 @@
   .card.forgot{border-color:rgba(255,107,125,.4); background:rgba(255,107,125,.07); box-shadow:var(--shadow), 0 0 24px rgba(255,107,125,.10);}
 
   .task{display:flex; gap:11px; padding:12px 14px; align-items:flex-start; border-bottom:1px solid var(--line-2); cursor:pointer; transition:background .15s;}
+
+  .swipe-wrap{position:relative; overflow:hidden; border-bottom:1px solid var(--line-2);}
+  .swipe-wrap:last-child{border-bottom:0;}
+  .swipe-wrap .task{border-bottom:0;}
+  .swipe-bg{position:absolute; inset:0; display:flex; justify-content:space-between; align-items:stretch;}
+  .swipe-act{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; width:96px; color:#fff; font-size:12px; font-weight:700; opacity:0; transition:opacity .12s;}
+  .swipe-act svg{width:22px; height:22px;}
+  .swipe-act.left{background:linear-gradient(135deg,#FF7A7A,#F4514E); align-items:flex-start; padding-left:24px;}
+  .swipe-act.right{background:linear-gradient(135deg,#2BB98C,#16C098); align-items:flex-end; padding-right:24px;}
+  .swipe-wrap.reveal-left .swipe-act.left{opacity:1;}
+  .swipe-wrap.reveal-right .swipe-act.right{opacity:1;}
+  .swipe-fg{position:relative; z-index:1; background:var(--surface); will-change:transform; touch-action:pan-y;}
+  .swipe-wrap.animate .swipe-fg{transition:transform .22s cubic-bezier(.2,.7,.3,1);}
   .task:last-child{border-bottom:0;}
   .task:active{background:var(--surface-2);}
   .chk{width:22px; height:22px; border-radius:7px; border:2px solid var(--ink-3); flex:none; margin-top:1px; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;}
@@ -623,7 +636,12 @@ function dueTag(t){ const du=daysUntil(t.due); if(du===null)return ''; if(du<0)r
 function staleTag(t){ if(!isStale(t))return ''; const d=Math.floor((Date.now()-(t.createdAt||0))/86400000); return `<span class="tag over">ค้าง ${d} วัน</span>`; }
 function taskRow(t){
   const b=getBiz(t.businessId); const q=QUAD[quad(t)];
-  return `<div class="task ${t.done?'done':''}" data-action="edit-task" data-id="${t.id}">
+  return `<div class="swipe-wrap" data-swipe-id="${t.id}">
+    <div class="swipe-bg">
+      <div class="swipe-act left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>ลบ</span></div>
+      <div class="swipe-act right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 13l4 4L19 7"/></svg><span>เสร็จ</span></div>
+    </div>
+    <div class="task ${t.done?'done':''} swipe-fg" data-action="edit-task" data-id="${t.id}">
     <button class="chk" data-action="toggle-done" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7"/></svg></button>
     <div class="t-body"><div class="t-title">${esc(t.text)}</div>
       <div class="t-meta">
@@ -633,7 +651,8 @@ function taskRow(t){
         ${t.delegate?`<span class="tag deleg">➜ ${esc(t.delegateTo||'มอบหมาย')}</span>`:''}
         ${dueTag(t)}${staleTag(t)}
       </div>
-    </div></div>`;
+    </div></div>
+  </div>`;
 }
 function emptyBox(a,b){ return `<div class="empty-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><div class="e1">${a}</div>${b?`<div style="font-size:12px;margin-top:3px">${b}</div>`:''}</div>`; }
 
@@ -797,6 +816,7 @@ document.querySelectorAll('nav.bottom button').forEach(btn=>btn.addEventListener
 document.getElementById('fab').addEventListener('click',()=>{ if(TAB==='calendar') openEvent(null, calSelected||todayStr()); else openTask(); });
 
 document.getElementById('app-main').addEventListener('click',e=>{
+  if(window.__swipeJustHandled){ e.stopPropagation(); e.preventDefault(); return; }
   const el=e.target.closest('[data-action]'); if(!el) return;
   const a=el.dataset.action, id=el.dataset.id;
   if(a==='edit-task') openTask(id);
@@ -825,6 +845,58 @@ document.getElementById('app-main').addEventListener('click',e=>{
   else if(a==='reset'){ if(confirm('ล้างข้อมูลทั้งหมดและเริ่มใหม่?')){ S=seed(); save(); render(); toast('เริ่มใหม่แล้ว'); } }
 });
 document.getElementById('app-main').addEventListener('change',e=>{ if(e.target.id==='set-name'){ S.settings.name=e.target.value.trim(); save(); applyHeader(); } });
+
+/* ---------- ปัดเพื่อ เสร็จ/ลบ ---------- */
+(function(){
+  const main=document.getElementById('app-main');
+  const TH=64;            // ระยะเริ่มเห็นปุ่ม
+  const TRIGGER=120;      // ระยะที่ปล่อยแล้วทำงาน
+  let fg=null,wrap=null,id=null,x0=0,y0=0,dx=0,locked=false,horiz=false;
+  function reset(animate){
+    if(!fg) return;
+    const w=wrap,f=fg;
+    if(animate){ w.classList.add('animate'); f.style.transform='translateX(0)'; setTimeout(()=>{ w.classList.remove('animate','reveal-left','reveal-right'); },230); }
+    else { f.style.transform='translateX(0)'; w.classList.remove('reveal-left','reveal-right'); }
+    fg=wrap=id=null; dx=0; locked=false; horiz=false;
+  }
+  main.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    const f=e.target.closest('.swipe-fg'); if(!f) return;
+    fg=f; wrap=f.closest('.swipe-wrap'); id=wrap&&wrap.dataset.swipeId;
+    x0=e.clientX; y0=e.clientY; dx=0; locked=false; horiz=false;
+    wrap.classList.remove('animate');
+  });
+  main.addEventListener('pointermove',e=>{
+    if(!fg) return;
+    const mx=e.clientX-x0, my=e.clientY-y0;
+    if(!locked){
+      if(Math.abs(mx)<6 && Math.abs(my)<6) return;
+      locked=true; horiz=Math.abs(mx)>Math.abs(my);
+      if(horiz){ try{fg.setPointerCapture(e.pointerId);}catch(_){ } }
+    }
+    if(!horiz){ fg=wrap=null; return; } // เป็นการ scroll แนวตั้ง ปล่อยให้เลื่อนปกติ
+    dx=mx;
+    fg.style.transform='translateX('+dx+'px)';
+    wrap.classList.toggle('reveal-left', dx>TH);
+    wrap.classList.toggle('reveal-right', dx<-TH);
+    e.preventDefault();
+  },{passive:false});
+  function end(){
+    if(!fg||!horiz){ reset(false); return; }
+    const theId=id, d=dx;
+    if(d<=-TRIGGER){ // ปัดซ้าย = เสร็จ
+      window.__swipeJustHandled=true; setTimeout(()=>window.__swipeJustHandled=false,350);
+      reset(true); completeTask(theId);
+    } else if(d>=TRIGGER){ // ปัดขวา = ลบ (ยืนยันก่อน)
+      window.__swipeJustHandled=true; setTimeout(()=>window.__swipeJustHandled=false,350);
+      const t=S.tasks.find(x=>x.id===theId);
+      reset(true);
+      if(t && confirm('ลบงาน "'+t.text+'" ?')){ S.tasks=S.tasks.filter(x=>x.id!==theId); save(); render(); toast('ลบแล้ว'); }
+    } else { reset(true); }
+  }
+  main.addEventListener('pointerup',end);
+  main.addEventListener('pointercancel',()=>reset(true));
+})();
 
 function completeTask(id){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
