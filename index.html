@@ -319,6 +319,13 @@
   .tc-fresh i:nth-child(3){background:#FFA630;}
   .tc-name{font-size:12.5px; font-weight:600; color:var(--ink-2); text-align:center;}
 
+  .chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2); font-family:inherit; font-size:13.5px; font-weight:500; cursor:pointer; transition:.12s;}
+  .chip .cdot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .chip.on{border-color:var(--accent); color:var(--ink); background:var(--accent-tint); box-shadow:0 0 0 1px var(--accent-soft);}
+  .chip .ck{width:14px;height:14px;opacity:0;margin-left:-3px;}
+  .chip.on .ck{opacity:1;}
+
   /* จอคอม/แท็บเล็ต — ตัวอักษรใหญ่ขึ้นเล็กน้อยให้อ่านสบาย */
   @media (min-width:760px){
     body{font-size:16px;}
@@ -366,7 +373,7 @@
     <div class="sh-head"><h3 id="tm-title">เพิ่มงานใหม่</h3><button class="del-x" data-close="task-modal">✕</button></div>
     <div class="body">
       <div class="field"><label>เรื่องที่ต้องทำ</label><input type="text" id="tm-text" placeholder="เช่น ตามงานซ่อมเครื่องซัก สาขา 2" autocomplete="off"></div>
-      <div class="field"><label>ธุรกิจ / ด้าน</label><select id="tm-biz"></select></div>
+      <div class="field"><label>ธุรกิจ / ด้าน <span id="tm-biz-hint" style="color:var(--ink-3);font-weight:400"></span></label><div class="chips" id="tm-biz-chips"></div></div>
       <div class="field"><label>สำคัญแค่ไหน</label><div class="seg imp" id="tm-imp"><button data-v="1">น้อย</button><button data-v="2">ปานกลาง</button><button data-v="3">มาก</button></div></div>
       <div class="field"><label>ด่วนแค่ไหน</label><div class="seg urg" id="tm-urg"><button data-v="1">ไม่ด่วน</button><button data-v="2">ปานกลาง</button><button data-v="3">ด่วน</button></div></div>
       <div class="field"><label>ทำซ้ำ (กันลืมงานประจำ)</label><div class="seg rep" id="tm-rep"><button data-v="none">ครั้งเดียว</button><button data-v="daily">ทุกวัน</button><button data-v="weekly">ทุกสัปดาห์</button><button data-v="monthly">ทุกเดือน</button></div></div>
@@ -827,7 +834,7 @@ function completeTask(id){
 }
 
 /* ---------- TASK MODAL ---------- */
-let editTaskId=null, tmImp=2, tmUrg=1, tmRep='none', tmDeleg=false;
+let editTaskId=null, tmImp=2, tmUrg=1, tmRep='none', tmDeleg=false, tmBiz=[];
 function openTask(id){
   editTaskId=id||null; const t=id?S.tasks.find(x=>x.id===id):null;
   document.getElementById('tm-title').textContent=id?'แก้ไขงาน':'เพิ่มงานใหม่';
@@ -836,11 +843,22 @@ function openTask(id){
   document.getElementById('tm-due').value=t?t.due:'';
   document.getElementById('tm-deleg-who').value=t?(t.delegateTo||''):'';
   tmImp=t?t.importance:2; tmUrg=t?t.urgency:1; tmRep=t?(t.repeat||'none'):'none'; tmDeleg=t?t.delegate:false;
-  const sel=document.getElementById('tm-biz'); sel.innerHTML=S.businesses.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('');
-  sel.value=t?t.businessId:(S.businesses[0]&&S.businesses[0].id);
+  tmBiz = t ? [t.businessId] : (S.businesses[0]?[S.businesses[0].id]:[]);
+  paintBizChips(!!id);
   segPaint('tm-imp',tmImp,true); segPaint('tm-urg',tmUrg,true); segPaint('tm-rep',tmRep,false); paintDeleg();
   document.getElementById('tm-delete').style.display=id?'block':'none';
   showOverlay('task-modal');
+}
+function paintBizChips(isEdit){
+  const wrap=document.getElementById('tm-biz-chips');
+  wrap.innerHTML=S.businesses.map(b=>`<button type="button" class="chip ${tmBiz.includes(b.id)?'on':''}" data-bizchip="${b.id}"><span class="cdot" style="background:${b.color}"></span>${esc(b.name)}<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></button>`).join('');
+  document.getElementById('tm-biz-hint').textContent = isEdit ? '' : '(เลือกได้หลายร้าน)';
+  wrap.querySelectorAll('[data-bizchip]').forEach(ch=>{ ch.onclick=()=>{
+    const id=ch.dataset.bizchip;
+    if(isEdit){ tmBiz=[id]; }
+    else { if(tmBiz.includes(id)) tmBiz=tmBiz.filter(x=>x!==id); else tmBiz.push(id); if(!tmBiz.length) tmBiz=[id]; }
+    paintBizChips(isEdit);
+  }; });
 }
 function segPaint(wrap,val,numeric){ document.querySelectorAll('#'+wrap+' button').forEach(b=>b.classList.toggle('on', numeric? (+b.dataset.v===val) : (b.dataset.v===val))); }
 function paintDeleg(){ document.getElementById('tm-deleg-toggle').classList.toggle('on',tmDeleg); document.getElementById('tm-deleg-who').style.display=tmDeleg?'block':'none'; }
@@ -850,16 +868,17 @@ document.querySelectorAll('#tm-rep button').forEach(b=>b.onclick=()=>{tmRep=b.da
 document.getElementById('tm-deleg-toggle').onclick=()=>{tmDeleg=!tmDeleg; paintDeleg();};
 document.getElementById('tm-save').onclick=()=>{
   const text=document.getElementById('tm-text').value.trim(); if(!text){ toast('ใส่เรื่องที่ต้องทำก่อนนะครับ'); return; }
+  if(!tmBiz.length){ toast('เลือกธุรกิจอย่างน้อย 1'); return; }
   let due=document.getElementById('tm-due').value;
   if(tmRep!=='none' && !due) due=todayStr(); // งานทำซ้ำต้องมีจุดอ้างอิง
-  const data={ text, businessId:document.getElementById('tm-biz').value, importance:tmImp, urgency:tmUrg, repeat:tmRep,
+  const base={ text, importance:tmImp, urgency:tmUrg, repeat:tmRep,
     delegate:tmDeleg, delegateTo:document.getElementById('tm-deleg-who').value.trim(), due, notes:document.getElementById('tm-notes').value.trim() };
-  if(editTaskId){ Object.assign(S.tasks.find(x=>x.id===editTaskId),data); }
-  else { S.tasks.push(Object.assign({id:uid(),done:false,lastDone:0,lastFollowup:0,createdAt:Date.now()},data)); }
-  save(); hideOverlay('task-modal'); render(); toast('บันทึกแล้ว');
+  if(editTaskId){ Object.assign(S.tasks.find(x=>x.id===editTaskId), base, {businessId:tmBiz[0]}); }
+  else { tmBiz.forEach(bid=>{ S.tasks.push(Object.assign({id:uid(),done:false,lastDone:0,lastFollowup:0,createdAt:Date.now(),businessId:bid},base)); }); }
+  save(); hideOverlay('task-modal'); render(); toast(editTaskId?'บันทึกแล้ว':(tmBiz.length>1?`เพิ่มงานให้ ${tmBiz.length} ร้านแล้ว`:'บันทึกแล้ว'));
 };
 document.getElementById('tm-delete').onclick=()=>{ if(editTaskId && confirm('ลบงานนี้?')){ S.tasks=S.tasks.filter(x=>x.id!==editTaskId); save(); hideOverlay('task-modal'); render(); toast('ลบแล้ว'); } };
-document.getElementById('tm-cal').onclick=()=>{ const text=document.getElementById('tm-text').value.trim(); if(!text){ toast('ใส่เรื่องที่ต้องทำก่อนนะครับ'); return; } let due=document.getElementById('tm-due').value||todayStr(); const t={text,businessId:document.getElementById('tm-biz').value,due,repeat:tmRep}; window.open(gcalTaskUrl(t),'_blank'); toast('เปิด Google ปฏิทิน...'); };
+document.getElementById('tm-cal').onclick=()=>{ const text=document.getElementById('tm-text').value.trim(); if(!text){ toast('ใส่เรื่องที่ต้องทำก่อนนะครับ'); return; } if(!tmBiz.length){ toast('เลือกธุรกิจก่อนนะครับ'); return; } let due=document.getElementById('tm-due').value||todayStr(); const t={text,businessId:tmBiz[0],due,repeat:tmRep}; window.open(gcalTaskUrl(t),'_blank'); toast('เปิด Google ปฏิทิน...'); };
 
 /* ---------- BLOCK MODAL ---------- */
 let editBlockId=null, bmDays=[];
