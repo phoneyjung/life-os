@@ -133,6 +133,10 @@
   .swipe-wrap{position:relative; overflow:hidden; border-bottom:1px solid var(--line-2);}
   .swipe-wrap:last-child{border-bottom:0;}
   .swipe-wrap .task{border-bottom:0;}
+  .swipe-wrap .ev-row{border-bottom:0;}
+  .ev-row.ev-done{opacity:.5;}
+  .ev-row.ev-done .ev-title{text-decoration:line-through;}
+  .ev-done-badge{flex:none; width:22px; height:22px; border-radius:50%; background:var(--q2); color:var(--on-accent); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; margin-left:4px;}
   .swipe-bg{position:absolute; inset:0; display:flex; justify-content:space-between; align-items:stretch;}
   .swipe-act{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; width:96px; color:#fff; font-size:12px; font-weight:700; opacity:0; transition:opacity .12s;}
   .swipe-act svg{width:22px; height:22px;}
@@ -339,6 +343,29 @@
   .chip .ck{width:14px;height:14px;opacity:0;margin-left:-3px;}
   .chip.on .ck{opacity:1;}
 
+  /* สถานะลูก */
+  .cal-school{position:absolute; top:3px; left:4px; font-size:10px; line-height:1;}
+  .cal-cell.sch-school{background:rgba(61,224,255,.07);}
+  .cal-cell.sch-break{background:rgba(255,111,165,.07);}
+  .cal-cell.sch-holiday{background:rgba(255,200,97,.06);}
+  .cal-legend{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-size:11.5px; color:var(--ink-2); margin-top:10px; padding:9px; background:var(--surface-2); border:1px solid var(--line); border-radius:12px;}
+  .school-banner{display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:14px; margin:4px 0 4px; border:1px solid var(--line);}
+  .school-banner .sb-ic{font-size:24px; flex:none;}
+  .school-banner .sb-t{font-size:15px; font-weight:700;}
+  .school-banner .sb-s{font-size:12px; color:var(--ink-2); margin-top:1px;}
+  .school-banner.sch-school{background:rgba(61,224,255,.10); border-color:rgba(61,224,255,.3);}
+  .school-banner.sch-holiday{background:rgba(255,200,97,.10); border-color:rgba(255,200,97,.3);}
+  .school-banner.sch-break{background:rgba(255,111,165,.10); border-color:rgba(255,111,165,.3);}
+  .today-school{display:flex; align-items:center; gap:9px; padding:11px 15px; border-radius:14px; margin-bottom:14px; border:1px solid var(--line); font-size:14px;}
+  .today-school b{font-weight:700;}
+  .today-school .ts-sub{font-size:12px; color:var(--ink-2); margin-left:auto; text-align:right;}
+  .today-school.sch-school{background:rgba(61,224,255,.10); border-color:rgba(61,224,255,.3);}
+  .today-school.sch-holiday{background:rgba(255,200,97,.10); border-color:rgba(255,200,97,.3);}
+  .today-school.sch-break{background:rgba(255,111,165,.10); border-color:rgba(255,111,165,.3);}
+  .term-item, .hol-item{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:13.5px;}
+  .term-item:last-child, .hol-item:last-child{border-bottom:0;}
+  .term-item .ti-txt, .hol-item .hi-txt{flex:1; color:var(--ink);}
+
   /* จอคอม/แท็บเล็ต — ตัวอักษรใหญ่ขึ้นเล็กน้อยให้อ่านสบาย */
   @media (min-width:760px){
     body{font-size:16px;}
@@ -421,6 +448,33 @@
 </div>
 
 <!-- BUSINESS MODAL -->
+<!-- SCHOOL MODAL -->
+<div class="overlay" id="school-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3>ตารางเรียนลูก</h3><button class="del-x" data-close="school-modal">✕</button></div>
+    <div class="body">
+      <div class="toggle" id="school-enable"><div><div style="font-size:14px;font-weight:500">แสดงสถานะลูกในปฏิทิน</div><div style="font-size:11.5px;color:var(--ink-3);margin-top:1px">วันเรียน 🎒 / ลูกหยุด 🏠 / ปิดเทอม 🌴</div></div><div class="sw"></div></div>
+
+      <div id="school-body">
+        <div class="field"><label>วันที่ลูกไปเรียน (ปกติ)</label><div class="days" id="school-weekdays"></div></div>
+
+        <div class="field"><label>ช่วงเปิดเทอม (ดูจากปฏิทินโรงเรียน)</label>
+          <div class="hint" style="margin:0 0 8px">ใส่วันเริ่ม–วันสิ้นสุดของแต่ละเทอม · นอกช่วงนี้ = ปิดเทอม</div>
+          <div id="term-list"></div>
+          <div class="row2" style="margin-top:8px"><input type="date" id="term-start"><input type="date" id="term-end"></div>
+          <button class="btn sm full" id="term-add" style="margin-top:8px">+ เพิ่มช่วงเทอม</button>
+        </div>
+
+        <div class="field"><label>วันหยุดพิเศษ (เปิดเทอมแต่โรงเรียนหยุด)</label>
+          <div id="holiday-list"></div>
+          <div class="row2" style="margin-top:8px"><input type="date" id="holiday-date"><button class="btn sm" id="holiday-add" style="flex:none">เพิ่มวันหยุด</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- SEARCH MODAL -->
 <div class="overlay" id="search-modal">
   <div class="sheet">
@@ -565,6 +619,7 @@ function seed(){
       {id:uid(),title:'ตรวจสุขภาพประจำปี',businessId:'me',repeat:'none',weekdays:[],monthdays:[],date:addInterval(todayStr(),'weekly'),time:'10:00',notes:'',createdAt:Date.now()},
     ],
     settings:{ name:'', familyGoal:18, theme:'space' },
+    school:{ enabled:false, weekdays:[1,2,3,4,5], terms:[], holidays:[] },
     _updatedAt: Date.now()
   };
 }
@@ -576,6 +631,10 @@ function ensureShape(){
   if(!S.settings.theme)S.settings.theme='space';
   S.review=S.review||{items:[],done:{},week:''};
   S.events=S.events||[];
+  S.events.forEach(e=>{ if(!Array.isArray(e.doneDates)) e.doneDates=[]; });
+  S.school=S.school||{enabled:false,weekdays:[1,2,3,4,5],terms:[],holidays:[]};
+  if(!S.school.weekdays)S.school.weekdays=[1,2,3,4,5];
+  S.school.terms=S.school.terms||[]; S.school.holidays=S.school.holidays||[];
   S.events.forEach(e=>{ if(!('weekdays'in e))e.weekdays=[]; if(!('monthdays'in e))e.monthdays=[]; if(!('repeat'in e))e.repeat='none'; });
   S.tasks.forEach(t=>{ if(!('repeat'in t))t.repeat='none'; if(!('lastDone'in t))t.lastDone=0; if(!('lastFollowup'in t))t.lastFollowup=0; if(!('createdAt'in t))t.createdAt=Date.now(); });
 }
@@ -641,7 +700,7 @@ function taskRow(t){
       <div class="swipe-act left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>ลบ</span></div>
       <div class="swipe-act right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 13l4 4L19 7"/></svg><span>เสร็จ</span></div>
     </div>
-    <div class="task ${t.done?'done':''} swipe-fg" data-action="edit-task" data-id="${t.id}">
+    <div class="task ${t.done?'done':''} swipe-fg" data-action="edit-task" data-id="${t.id}" data-swipe-type="task">
     <button class="chk" data-action="toggle-done" data-id="${t.id}"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7"/></svg></button>
     <div class="t-body"><div class="t-title">${esc(t.text)}</div>
       <div class="t-meta">
@@ -701,6 +760,8 @@ function viewToday(){
   const todayEvents=eventsOnDate(todayStr());
 
   let html='';
+  const ssToday=schoolDayStatus(todayStr());
+  if(ssToday){ const m=SCHOOL_META[ssToday]; html+=`<div class="today-school sch-${ssToday}"><span>${m.icon}</span><b>${m.label}</b><span class="ts-sub">${m.tip}</span></div>`; }
   if(forgot.length){
     html+=`<div class="forgot-head">⚠️ ลืมรึเปล่า? · ${forgot.length} เรื่องที่ค้าง/เลยกำหนด</div>
       <div class="card forgot">${forgot.slice(0,5).map(taskRow).join('')}</div>`;
@@ -717,7 +778,7 @@ function viewToday(){
   <div class="section-title">ทำก่อน (เรียงตามความสำคัญ)</div>
   <div class="card">${top.length? top.map(taskRow).join('') : emptyBox('ยังไม่มีงานค้าง','กดปุ่ม + เพื่อเพิ่มงาน')}</div>
   ${todayEvents.length?`<div class="section-title">นัดหมาย / งานประจำวันนี้</div>
-  <div class="card">${todayEvents.map(ev=>evRow(ev,false)).join('')}</div>`:''}
+  <div class="card">${todayEvents.map(ev=>evRow(ev,false,todayStr())).join('')}</div>`:''}
   <div class="section-title">ตารางวันนี้ · วัน${TH_DAY[dow]}</div>
   <div class="card">${todayBlocks.length? todayBlocks.map(bk=>blockRow(bk,false)).join('') : emptyBox('วันนี้ยังไม่มีช่วงเวลาที่กันไว้','ไปตั้งในแท็บ "ตาราง"')}</div>
   <div style="height:8px"></div>`;
@@ -802,6 +863,7 @@ function viewOverview(){
         <button class="theme-card" data-action="theme" data-id="fresh"><span class="tc-prev tc-fresh"><i></i><i></i><i></i></span><span class="tc-name">สดใส</span></button>
       </div>
     </div>
+    <div class="set-row"><div><div class="sl">ตารางเรียนลูก</div><div class="ss">แสดงวันเรียน/หยุด/ปิดเทอมในปฏิทิน</div></div><button class="btn sm" data-action="open-school">ตั้งค่า</button></div>
     <div class="set-row"><div><div class="sl">จัดการธุรกิจ / ด้าน</div><div class="ss">เพิ่ม แก้ชื่อ เปลี่ยนสี ลบ</div></div><button class="btn sm" data-action="open-biz">จัดการ</button></div>
     <div class="set-row"><div><div class="sl">สำรอง / ย้ายข้อมูล</div><div class="ss">ไฟล์ .json</div></div>
       <div style="display:flex;gap:8px"><button class="btn sm" data-action="export">ส่งออก</button><button class="btn sm" data-action="import">นำเข้า</button></div></div>
@@ -830,6 +892,7 @@ document.getElementById('app-main').addEventListener('click',e=>{
   else if(a==='followup'){ const t=S.tasks.find(x=>x.id===id); if(t){ t.lastFollowup=Date.now(); save(); render(); toast('บันทึกว่าตามแล้ววันนี้ 📞'); } }
   else if(a==='goal'){ S.settings.familyGoal=Math.max(0,(S.settings.familyGoal||0)+parseInt(id)); save(); render(); }
   else if(a==='open-biz') openBizModal();
+  else if(a==='open-school') openSchool();
   else if(a==='theme') setTheme(id);
   else if(a==='install') installApp();
   else if(a==='cal-select'){ calSelected=id; render(); }
@@ -884,14 +947,21 @@ document.getElementById('app-main').addEventListener('change',e=>{ if(e.target.i
   function end(){
     if(!fg||!horiz){ reset(false); return; }
     const theId=id, d=dx;
-    if(d<=-TRIGGER){ // ปัดซ้าย = เสร็จ
+    const type=fg.dataset.swipeType||'task';
+    const sdate=fg.dataset.swipeDate||'';
+    if(d<=-TRIGGER){ // ปัดซ้าย = ทำแล้ว/เสร็จ
       window.__swipeJustHandled=true; setTimeout(()=>window.__swipeJustHandled=false,350);
-      reset(true); completeTask(theId);
+      reset(true);
+      if(type==='event') completeEvent(theId,sdate); else completeTask(theId);
     } else if(d>=TRIGGER){ // ปัดขวา = ลบ (ยืนยันก่อน)
       window.__swipeJustHandled=true; setTimeout(()=>window.__swipeJustHandled=false,350);
-      const t=S.tasks.find(x=>x.id===theId);
-      reset(true);
-      if(t && confirm('ลบงาน "'+t.text+'" ?')){ S.tasks=S.tasks.filter(x=>x.id!==theId); save(); render(); toast('ลบแล้ว'); }
+      if(type==='event'){
+        const ev=S.events.find(x=>x.id===theId); reset(true);
+        if(ev && confirm('ลบ "'+ev.title+'" ?'+((ev.repeat&&ev.repeat!=='none')?'\n(จะลบทั้งรายการที่ทำซ้ำ)':''))){ S.events=S.events.filter(x=>x.id!==theId); save(); render(); toast('ลบแล้ว'); }
+      } else {
+        const t=S.tasks.find(x=>x.id===theId); reset(true);
+        if(t && confirm('ลบงาน "'+t.text+'" ?')){ S.tasks=S.tasks.filter(x=>x.id!==theId); save(); render(); toast('ลบแล้ว'); }
+      }
     } else { reset(true); }
   }
   main.addEventListener('pointerup',end);
@@ -902,6 +972,14 @@ function completeTask(id){
   const t=S.tasks.find(x=>x.id===id); if(!t) return;
   if(t.repeat && t.repeat!=='none' && !t.done){ t.lastDone=Date.now(); t.due=addInterval(todayStr(),t.repeat); toast('เยี่ยม! เดี๋ยวเด้งเตือนรอบหน้า ↻'); }
   else { t.done=!t.done; toast(t.done?'เสร็จแล้ว 🎉':'กลับมาทำต่อ'); }
+  save(); render();
+}
+function eventDoneOn(ev, ds){ return !!ev && Array.isArray(ev.doneDates) && ev.doneDates.includes(ds); }
+function completeEvent(id, ds){
+  const ev=S.events.find(x=>x.id===id); if(!ev || !ds) return;
+  ev.doneDates=ev.doneDates||[];
+  if(ev.doneDates.includes(ds)){ ev.doneDates=ev.doneDates.filter(d=>d!==ds); toast('กลับมาทำต่อ'); }
+  else { ev.doneDates.push(ds); toast(ev.repeat&&ev.repeat!=='none'?'ทำแล้ววันนี้ ✓ (รอบหน้ากลับมาใหม่)':'เสร็จแล้ว 🎉'); }
   save(); render();
 }
 
@@ -978,6 +1056,23 @@ document.getElementById('bm-cal').onclick=()=>{ const label=document.getElementB
 
 /* =================== CALENDAR / EVENTS =================== */
 const EV_REP={weekly:'ทุกสัปดาห์',monthly:'ทุกเดือน'};
+
+/* สถานะลูกในแต่ละวัน: 'school' (วันเรียน), 'holiday' (เปิดเทอมแต่หยุด), 'break' (ปิดเทอม), null (ปิดฟีเจอร์) */
+function inAnyTerm(ds){ return (S.school.terms||[]).some(t=>t.start && t.end && ds>=t.start && ds<=t.end); }
+function schoolDayStatus(ds){
+  if(!S.school || !S.school.enabled) return null;
+  const dt=new Date(ds+'T00:00:00'); const dow=dt.getDay();
+  if(!inAnyTerm(ds)) return 'break';                 // นอกช่วงเทอม = ปิดเทอม
+  if((S.school.holidays||[]).includes(ds)) return 'holiday'; // วันหยุดพิเศษในเทอม
+  if((S.school.weekdays||[]).includes(dow)) return 'school'; // วันเรียนตามปกติ
+  return 'holiday';                                  // เสาร์-อาทิตย์ในเทอม
+}
+const SCHOOL_META={
+  school:{icon:'🎒', label:'วันเรียน', color:'#3DE0FF', tip:'วันนี้ลูกไปเรียน'},
+  holiday:{icon:'🏠', label:'ลูกหยุด', color:'#FFC861', tip:'เปิดเทอม แต่วันนี้ลูกหยุด'},
+  break:{icon:'🌴', label:'ปิดเทอม', color:'#FF6FA5', tip:'ช่วงปิดเทอม ลูกอยู่บ้าน'}
+};
+
 function eventsOnDate(ds){
   const dt=new Date(ds+'T00:00:00'); const dow=dt.getDay(); const dom=dt.getDate();
   return S.events.filter(ev=>{
@@ -988,18 +1083,25 @@ function eventsOnDate(ds){
 }
 function tasksDueOnDate(ds){ return S.tasks.filter(t=>!t.done && t.due===ds); }
 function nextDateForMonthdays(mds){ const t=new Date(); t.setHours(0,0,0,0); for(let i=0;i<62;i++){ const d=new Date(t); d.setDate(t.getDate()+i); if(mds.includes(d.getDate())) return d; } return t; }
-function evRow(ev, showRepeat){
+function evRow(ev, showRepeat, ds){
   const b=getBiz(ev.businessId);
+  const done = ds ? eventDoneOn(ev, ds) : false;
   const timeHtml = ev.time ? `<div class="ev-time">${ev.time}</div>` : `<div class="ev-time allday">ทั้งวัน</div>`;
   let rep='';
   if(showRepeat && ev.repeat==='weekly') rep=`· ${[...(ev.weekdays||[])].sort((a,b)=>DAY_ORDER.indexOf(a)-DAY_ORDER.indexOf(b)).map(d=>TH_DAY_S[d]).join(' ')}`;
   else if(showRepeat && ev.repeat==='monthly') rep=`· ทุกวันที่ ${[...(ev.monthdays||[])].sort((a,b)=>a-b).join(', ')}`;
-  return `<div class="ev-row" data-action="edit-event" data-id="${ev.id}">
+  return `<div class="swipe-wrap" data-swipe-id="${ev.id}">
+    <div class="swipe-bg">
+      <div class="swipe-act left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span>ลบ</span></div>
+      <div class="swipe-act right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 13l4 4L19 7"/></svg><span>ทำแล้ว</span></div>
+    </div>
+    <div class="ev-row swipe-fg ${done?'ev-done':''}" data-action="edit-event" data-id="${ev.id}" data-swipe-type="event" data-swipe-date="${ds||''}">
     ${timeHtml}
     <div class="ev-bar" style="background:${b.color}"></div>
     <div style="flex:1; min-width:0"><div class="ev-title">${esc(ev.title)}</div>
       <div class="ev-meta">${esc(b.name)} ${ev.repeat!=='none'?`<span class="tag rep" style="font-size:10px;padding:1px 7px">↻ ${EV_REP[ev.repeat]}</span>`:''} ${rep}</div></div>
-  </div>`;
+    ${done?'<div class="ev-done-badge">✓</div>':''}
+  </div></div>`;
 }
 function gcalEventUrl(ev){
   const b=getBiz(ev.businessId); let d;
@@ -1033,23 +1135,32 @@ function viewCalendar(){
     if(!ds){ grid+=`<div class="cal-cell empty"></div>`; return; }
     const day=parseInt(ds.slice(-2),10); const evs=eventsOnDate(ds); const due=tasksDueOnDate(ds).length;
     const dots=evs.slice(0,4).map(ev=>`<span class="cd" style="background:${getBiz(ev.businessId).color}"></span>`).join('');
-    grid+=`<div class="cal-cell ${ds===today?'today':''} ${ds===calSelected?'sel':''}" data-action="cal-select" data-id="${ds}">
-      <div class="dn">${day}</div>${dots?`<div class="cal-dots">${dots}</div>`:''}${due?`<span class="cal-deadline"></span>`:''}</div>`;
+    const ss=schoolDayStatus(ds);
+    const schoolBadge = ss ? `<span class="cal-school cal-school-${ss}">${SCHOOL_META[ss].icon}</span>` : '';
+    grid+=`<div class="cal-cell ${ss?('sch-'+ss):''} ${ds===today?'today':''} ${ds===calSelected?'sel':''}" data-action="cal-select" data-id="${ds}">
+      ${schoolBadge}<div class="dn">${day}</div>${dots?`<div class="cal-dots">${dots}</div>`:''}${due?`<span class="cal-deadline"></span>`:''}</div>`;
   });
   const selEvents=eventsOnDate(calSelected); const selDue=tasksDueOnDate(calSelected);
   const sd=new Date(calSelected+'T00:00:00');
   const selLabel=`วัน${TH_DAY[sd.getDay()]} ${sd.getDate()} ${TH_MON[sd.getMonth()]}`;
-  let detail=`<div class="section-title">${selLabel}${calSelected===today?' · วันนี้':''}</div>`;
+  const selSS=schoolDayStatus(calSelected);
+  let detail='';
+  if(selSS){ const m=SCHOOL_META[selSS]; detail+=`<div class="school-banner sch-${selSS}"><span class="sb-ic">${m.icon}</span><div><div class="sb-t">${m.label}</div><div class="sb-s">${m.tip}</div></div></div>`; }
+  detail+=`<div class="section-title">${selLabel}${calSelected===today?' · วันนี้':''}</div>`;
   if(selEvents.length || selDue.length){
-    detail+=`<div class="card">`+selEvents.map(ev=>evRow(ev,true)).join('')
+    detail+=`<div class="card">`+selEvents.map(ev=>evRow(ev,true,calSelected)).join('')
       +selDue.map(t=>{const b=getBiz(t.businessId); return `<div class="ev-row" data-action="edit-task" data-id="${t.id}"><div class="ev-time allday">งาน</div><div class="ev-bar" style="background:${b.color}"></div><div style="flex:1;min-width:0"><div class="ev-title">${esc(t.text)}</div><div class="ev-meta">${esc(b.name)} <span class="ev-due-tag">⚑ ถึงกำหนด</span></div></div></div>`;}).join('')
       +`</div>`;
   } else { detail+=`<div class="card">${emptyBox('วันนี้ยังไม่มีนัดหมาย','กดปุ่มด้านล่างเพื่อเพิ่ม')}</div>`; }
   detail+=`<button class="btn full" data-action="add-event" data-id="${calSelected}" style="margin-top:10px"> + เพิ่มนัดหมาย / งานประจำ</button>`;
+  const legend = S.school.enabled
+    ? `<div class="cal-legend">🎒 วันเรียน · 🏠 ลูกหยุด · 🌴 ปิดเทอม</div>`
+    : `<button class="btn sm" data-action="open-school" style="margin-top:10px">📅 ตั้งตารางเรียนลูก</button>`;
   return `<div class="cal-head"><div class="mtitle">${TH_MON[calMonth]} ${calYear+543}</div>
-    <div class="cal-nav"><button data-action="cal-today" class="cal-today-btn">วันนี้</button><button data-action="cal-prev">‹</button><button data-action="cal-next">›</button></div></div>
+    <div class="cal-nav">${S.school.enabled?'<button data-action="open-school" class="cal-today-btn">ตารางลูก</button>':''}<button data-action="cal-today" class="cal-today-btn">วันนี้</button><button data-action="cal-prev">‹</button><button data-action="cal-next">›</button></div></div>
     <div class="cal-grid">${grid}</div>
     <div class="hint" style="margin:10px 4px 0">จุดสี = นัดหมาย/งานประจำ · ■ มุมขวา = มีงานถึงกำหนด · แตะวันเพื่อดู/เพิ่ม</div>
+    ${legend}
     <div class="cal-day-detail">${detail}</div><div style="height:8px"></div>`;
 }
 
@@ -1167,6 +1278,33 @@ function renderBizList(){
 function cycleColor(id){ const b=S.businesses.find(x=>x.id===id); if(!b)return; const i=PALETTE.indexOf(b.color); b.color=PALETTE[(i+1)%PALETTE.length]; save(); renderBizList(); render(); }
 function paintNewColors(){ document.getElementById('biz-new-colors').innerHTML=PALETTE.map(c=>`<span class="swatch ${c===newBizColor?'sel':''}" style="background:${c}" data-newc="${c}"></span>`).join(''); document.querySelectorAll('[data-newc]').forEach(s=>s.onclick=()=>{newBizColor=s.dataset.newc; paintNewColors();}); }
 document.getElementById('biz-add').onclick=()=>{ const name=document.getElementById('biz-new-name').value.trim(); if(!name){ toast('ใส่ชื่อก่อนนะครับ'); return; } S.businesses.push({id:uid(),name,color:newBizColor,family:false}); document.getElementById('biz-new-name').value=''; save(); renderBizList(); render(); toast('เพิ่มแล้ว'); };
+
+/* ---------- SCHOOL MODAL ---------- */
+function fmtThaiShort(ds){ const d=new Date(ds+'T00:00:00'); return `${d.getDate()} ${TH_MON[d.getMonth()].slice(0,3)} ${String((d.getFullYear()+543)).slice(-2)}`; }
+function openSchool(){
+  document.getElementById('school-enable').classList.toggle('on', !!S.school.enabled);
+  paintSchoolBody();
+  document.getElementById('school-weekdays').innerHTML=DAY_ORDER.map(d=>`<button data-d="${d}">${TH_DAY_S[d]}</button>`).join('');
+  document.querySelectorAll('#school-weekdays button').forEach(b=>{ const d=+b.dataset.d; b.classList.toggle('on',(S.school.weekdays||[]).includes(d)); b.onclick=()=>{ const w=S.school.weekdays||[]; if(w.includes(d)) S.school.weekdays=w.filter(x=>x!==d); else { w.push(d); S.school.weekdays=w; } save(); b.classList.toggle('on'); render(); }; });
+  renderTerms(); renderHolidays();
+  showOverlay('school-modal');
+}
+function paintSchoolBody(){ document.getElementById('school-body').style.opacity=S.school.enabled?'1':'.4'; document.getElementById('school-body').style.pointerEvents=S.school.enabled?'auto':'none'; }
+document.getElementById('school-enable').onclick=()=>{ S.school.enabled=!S.school.enabled; document.getElementById('school-enable').classList.toggle('on',S.school.enabled); paintSchoolBody(); save(); render(); };
+function renderTerms(){
+  const terms=(S.school.terms||[]).slice().sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const box=document.getElementById('term-list');
+  box.innerHTML = terms.length ? terms.map(t=>`<div class="term-item"><span class="ti-txt">${fmtThaiShort(t.start)} – ${fmtThaiShort(t.end)}</span><button class="del-x" data-term="${t.id}">🗑</button></div>`).join('') : `<div class="hint" style="padding:4px 0">ยังไม่ได้เพิ่มช่วงเทอม — ตอนนี้ทุกวันจะถือเป็นปิดเทอม</div>`;
+  box.querySelectorAll('[data-term]').forEach(b=>b.onclick=()=>{ S.school.terms=S.school.terms.filter(x=>x.id!==b.dataset.term); save(); renderTerms(); render(); });
+}
+document.getElementById('term-add').onclick=()=>{ const s=document.getElementById('term-start').value, e=document.getElementById('term-end').value; if(!s||!e){ toast('เลือกวันเริ่มและวันสิ้นสุด'); return; } if(e<s){ toast('วันสิ้นสุดต้องอยู่หลังวันเริ่ม'); return; } S.school.terms.push({id:uid(),start:s,end:e}); document.getElementById('term-start').value=''; document.getElementById('term-end').value=''; save(); renderTerms(); render(); toast('เพิ่มช่วงเทอมแล้ว'); };
+function renderHolidays(){
+  const hol=(S.school.holidays||[]).slice().sort();
+  const box=document.getElementById('holiday-list');
+  box.innerHTML = hol.length ? hol.map(d=>`<div class="hol-item"><span class="hi-txt">${fmtThaiShort(d)}</span><button class="del-x" data-hol="${d}">🗑</button></div>`).join('') : `<div class="hint" style="padding:4px 0">ยังไม่มีวันหยุดพิเศษ</div>`;
+  box.querySelectorAll('[data-hol]').forEach(b=>b.onclick=()=>{ S.school.holidays=S.school.holidays.filter(x=>x!==b.dataset.hol); save(); renderHolidays(); render(); });
+}
+document.getElementById('holiday-add').onclick=()=>{ const d=document.getElementById('holiday-date').value; if(!d){ toast('เลือกวันที่'); return; } if(!S.school.holidays.includes(d)) S.school.holidays.push(d); document.getElementById('holiday-date').value=''; save(); renderHolidays(); render(); toast('เพิ่มวันหยุดแล้ว'); };
 
 /* ---------- export / import ---------- */
 function doExport(){ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='life-os-backup-'+todayStr()+'.json'; a.click(); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); }
