@@ -137,6 +137,19 @@
   .ev-row.ev-done{opacity:.5;}
   .ev-row.ev-done .ev-title{text-decoration:line-through;}
   .ev-done-badge{flex:none; width:22px; height:22px; border-radius:50%; background:var(--q2); color:var(--on-accent); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; margin-left:4px;}
+
+  .sum-nav{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+  .sum-nav button{flex:none; width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:20px; cursor:pointer;}
+  .sum-range{flex:1; text-align:center; font-size:15px; font-weight:700; color:var(--ink);}
+  .sum-opts{display:flex; flex-direction:column; gap:1px; background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:4px 12px; margin-bottom:12px;}
+  .sum-chk{display:flex; align-items:center; justify-content:space-between; padding:9px 0; font-size:13.5px; color:var(--ink); cursor:pointer; border-bottom:1px solid var(--line-2);}
+  .sum-chk:last-child{border-bottom:0;}
+  .mini-sw{width:40px; height:24px; border-radius:999px; background:var(--line); position:relative; transition:.18s; flex:none;}
+  .mini-sw::after{content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#EAF2FF; top:3px; left:3px; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.4);}
+  .sum-chk.on .mini-sw{background:var(--accent); box-shadow:0 0 10px var(--accent-glow);}
+  .sum-chk.on .mini-sw::after{left:19px; background:var(--on-accent);}
+  .sum-text{width:100%; min-height:230px; border:1px solid var(--line); border-radius:12px; padding:13px; font-family:inherit; font-size:13.5px; line-height:1.7; background:var(--surface-2); color:var(--ink); resize:vertical; white-space:pre-wrap;}
+  .sum-actions{display:flex; flex-direction:column; gap:9px; margin-top:12px;}
   .swipe-bg{position:absolute; inset:0; display:flex; justify-content:space-between; align-items:stretch;}
   .swipe-act{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; width:96px; color:#fff; font-size:12px; font-weight:700; opacity:0; transition:opacity .12s;}
   .swipe-act svg{width:22px; height:22px;}
@@ -448,6 +461,28 @@
 </div>
 
 <!-- BUSINESS MODAL -->
+<!-- WEEK SUMMARY MODAL -->
+<div class="overlay" id="summary-modal">
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh-head"><h3>สรุปธุระสัปดาห์</h3><button class="del-x" data-close="summary-modal">✕</button></div>
+    <div class="body">
+      <div class="sum-nav"><button data-action="sum-prev">‹</button><div class="sum-range" id="sum-range">—</div><button data-action="sum-next">›</button></div>
+      <div class="sum-opts">
+        <label class="sum-chk" id="sum-opt-events"><span>นัดหมาย/งานประจำ</span><span class="mini-sw"></span></label>
+        <label class="sum-chk" id="sum-opt-tasks"><span>งานที่ถึงกำหนด</span><span class="mini-sw"></span></label>
+        <label class="sum-chk" id="sum-opt-school"><span>สถานะลูก (เรียน/หยุด)</span><span class="mini-sw"></span></label>
+      </div>
+      <textarea id="sum-text" class="sum-text" readonly></textarea>
+      <div class="sum-actions">
+        <button class="btn dark full" data-action="sum-share">📤 แชร์ไปไลน์</button>
+        <button class="btn full" data-action="sum-copy">📋 คัดลอกข้อความ</button>
+      </div>
+      <div class="hint" style="text-align:center;margin-top:8px">แตะ "แชร์ไปไลน์" แล้วเลือก LINE → เลือกแชทภรรยา</div>
+    </div>
+  </div>
+</div>
+
 <!-- SCHOOL MODAL -->
 <div class="overlay" id="school-modal">
   <div class="sheet">
@@ -655,6 +690,7 @@ function save(){ S._updatedAt=Date.now(); persistState(); scheduleSync(); }
 const TH_DAY=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 const TH_DAY_S=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const TH_MON=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_MON_S=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const DAY_ORDER=[1,2,3,4,5,6,0];
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function thaiDateLong(){ const d=new Date(); return `วัน${TH_DAY[d.getDay()]}<br>${d.getDate()} ${TH_MON[d.getMonth()]} ${d.getFullYear()+543}`; }
@@ -893,6 +929,11 @@ document.getElementById('app-main').addEventListener('click',e=>{
   else if(a==='goal'){ S.settings.familyGoal=Math.max(0,(S.settings.familyGoal||0)+parseInt(id)); save(); render(); }
   else if(a==='open-biz') openBizModal();
   else if(a==='open-school') openSchool();
+  else if(a==='open-summary') openSummary();
+  else if(a==='sum-prev'){ summaryWeekOffset--; renderSummary(); }
+  else if(a==='sum-next'){ summaryWeekOffset++; renderSummary(); }
+  else if(a==='sum-share') shareSummary();
+  else if(a==='sum-copy') copySummary();
   else if(a==='theme') setTheme(id);
   else if(a==='install') installApp();
   else if(a==='cal-select'){ calSelected=id; render(); }
@@ -1161,6 +1202,7 @@ function viewCalendar(){
     <div class="cal-grid">${grid}</div>
     <div class="hint" style="margin:10px 4px 0">จุดสี = นัดหมาย/งานประจำ · ■ มุมขวา = มีงานถึงกำหนด · แตะวันเพื่อดู/เพิ่ม</div>
     ${legend}
+    <button class="btn full" data-action="open-summary" style="margin-top:10px">📋 สรุปธุระสัปดาห์ (ส่งไลน์ให้ภรรยา)</button>
     <div class="cal-day-detail">${detail}</div><div style="height:8px"></div>`;
 }
 
@@ -1305,6 +1347,70 @@ function renderHolidays(){
   box.querySelectorAll('[data-hol]').forEach(b=>b.onclick=()=>{ S.school.holidays=S.school.holidays.filter(x=>x!==b.dataset.hol); save(); renderHolidays(); render(); });
 }
 document.getElementById('holiday-add').onclick=()=>{ const d=document.getElementById('holiday-date').value; if(!d){ toast('เลือกวันที่'); return; } if(!S.school.holidays.includes(d)) S.school.holidays.push(d); document.getElementById('holiday-date').value=''; save(); renderHolidays(); render(); toast('เพิ่มวันหยุดแล้ว'); };
+
+/* ---------- WEEK SUMMARY ---------- */
+let summaryWeekOffset=0;
+let sumOpts={events:true, tasks:true, school:false};
+function dstr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function mondayOfThisWeek(offset){
+  const d=new Date(todayStr()+'T00:00:00');
+  const dow=d.getDay();              // 0=อา..6=ส
+  const back=(dow===0?6:dow-1);      // ถอยไปวันจันทร์
+  d.setDate(d.getDate()-back + offset*7);
+  return d;
+}
+function weekSummaryText(){
+  const mon=mondayOfThisWeek(summaryWeekOffset);
+  const days=[]; for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); days.push(d); }
+  const last=days[6];
+  const rangeTxt = `${mon.getDate()} ${TH_MON_S[mon.getMonth()]} – ${last.getDate()} ${TH_MON_S[last.getMonth()]} ${String(last.getFullYear()+543).slice(-2)}`;
+  let label='สัปดาห์นี้'; if(summaryWeekOffset===1)label='สัปดาห์หน้า'; else if(summaryWeekOffset===-1)label='สัปดาห์ที่แล้ว'; else if(summaryWeekOffset!==0)label=`อีก ${summaryWeekOffset} สัปดาห์`;
+  let out=`📋 ธุระ${label} (${rangeTxt})\n`;
+  days.forEach(d=>{
+    const ds=dstr(d);
+    const lines=[];
+    if(sumOpts.events){
+      eventsOnDate(ds).forEach(ev=>{
+        const done=eventDoneOn(ev,ds);
+        lines.push(`${done?'✅':'•'} ${ev.time?ev.time+' ':''}${ev.title}`);
+      });
+    }
+    if(sumOpts.tasks){
+      tasksDueOnDate(ds).forEach(t=>{ lines.push(`• ${t.text} (งานถึงกำหนด)`); });
+    }
+    let head=`\n🗓️ ${TH_DAY[d.getDay()]} ${d.getDate()} ${TH_MON_S[d.getMonth()]}`;
+    if(sumOpts.school){ const ss=schoolDayStatus(ds); if(ss) head+=` ${SCHOOL_META[ss].icon}`; }
+    out+=head+'\n';
+    out+= lines.length ? lines.join('\n')+'\n' : '—\n';
+  });
+  out+=`\n— ส่งจากศูนย์ควบคุมชีวิต —`;
+  return {text:out, rangeTxt, label};
+}
+function paintSumOpts(){
+  document.getElementById('sum-opt-events').classList.toggle('on',sumOpts.events);
+  document.getElementById('sum-opt-tasks').classList.toggle('on',sumOpts.tasks);
+  document.getElementById('sum-opt-school').classList.toggle('on',sumOpts.school);
+}
+function renderSummary(){
+  const r=weekSummaryText();
+  document.getElementById('sum-range').textContent=r.label+' · '+r.rangeTxt;
+  document.getElementById('sum-text').value=r.text;
+  paintSumOpts();
+}
+function openSummary(){ summaryWeekOffset=0; renderSummary(); showOverlay('summary-modal'); }
+document.getElementById('sum-opt-events').onclick=()=>{ sumOpts.events=!sumOpts.events; renderSummary(); };
+document.getElementById('sum-opt-tasks').onclick=()=>{ sumOpts.tasks=!sumOpts.tasks; renderSummary(); };
+document.getElementById('sum-opt-school').onclick=()=>{ sumOpts.school=!sumOpts.school; renderSummary(); };
+function shareSummary(){
+  const text=document.getElementById('sum-text').value;
+  if(navigator.share){ navigator.share({text}).catch(()=>{}); }
+  else { copySummary(); toast('อุปกรณ์นี้แชร์ตรงไม่ได้ — คัดลอกให้แล้ว ไปวางในไลน์ได้เลย'); }
+}
+function copySummary(){
+  const ta=document.getElementById('sum-text'); const text=ta.value;
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>toast('คัดลอกแล้ว ✓ ไปวางในไลน์ได้เลย')).catch(()=>{ ta.select(); document.execCommand('copy'); toast('คัดลอกแล้ว ✓'); }); }
+  else { ta.select(); document.execCommand('copy'); toast('คัดลอกแล้ว ✓'); }
+}
 
 /* ---------- export / import ---------- */
 function doExport(){ const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='life-os-backup-'+todayStr()+'.json'; a.click(); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); }
