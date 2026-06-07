@@ -467,7 +467,7 @@
     <div class="grab"></div>
     <div class="sh-head"><h3>สรุปธุระสัปดาห์</h3><button class="del-x" data-close="summary-modal">✕</button></div>
     <div class="body">
-      <div class="sum-nav"><button data-action="sum-prev">‹</button><div class="sum-range" id="sum-range">—</div><button data-action="sum-next">›</button></div>
+      <div class="sum-nav"><button id="sum-prev">‹</button><div class="sum-range" id="sum-range">—</div><button id="sum-next">›</button></div>
       <div class="sum-opts">
         <label class="sum-chk" id="sum-opt-events"><span>นัดหมาย/งานประจำ</span><span class="mini-sw"></span></label>
         <label class="sum-chk" id="sum-opt-tasks"><span>งานที่ถึงกำหนด</span><span class="mini-sw"></span></label>
@@ -475,8 +475,8 @@
       </div>
       <textarea id="sum-text" class="sum-text" readonly></textarea>
       <div class="sum-actions">
-        <button class="btn dark full" data-action="sum-share">📤 แชร์ไปไลน์</button>
-        <button class="btn full" data-action="sum-copy">📋 คัดลอกข้อความ</button>
+        <button class="btn dark full" id="sum-share">📤 แชร์ไปไลน์</button>
+        <button class="btn full" id="sum-copy">📋 คัดลอกข้อความ</button>
       </div>
       <div class="hint" style="text-align:center;margin-top:8px">แตะ "แชร์ไปไลน์" แล้วเลือก LINE → เลือกแชทภรรยา</div>
     </div>
@@ -711,6 +711,7 @@ function gcalTaskUrl(t){ const b=getBiz(t.businessId); const due=t.due||todayStr
 
 /* ---------- logic ---------- */
 function getBiz(id){ return S.businesses.find(b=>b.id===id)||{name:'อื่นๆ',color:'#9AA096'}; }
+function shortBiz(name){ const p=String(name).split(/[–-]/); return (p.length>1?p[p.length-1]:name).trim(); }
 function effUrg(t){ let u=t.urgency; const du=daysUntil(t.due); if(du!==null){ if(du<=0)u=3; else if(du<=2)u=Math.max(u,2);} return u; }
 function isOver(t){ const du=daysUntil(t.due); return du!==null && du<0; }
 function isStale(t){ return !t.done && (!t.repeat||t.repeat==='none') && !t.due && (Date.now()-(t.createdAt||0) > 5*86400000); }
@@ -930,10 +931,6 @@ document.getElementById('app-main').addEventListener('click',e=>{
   else if(a==='open-biz') openBizModal();
   else if(a==='open-school') openSchool();
   else if(a==='open-summary') openSummary();
-  else if(a==='sum-prev'){ summaryWeekOffset--; renderSummary(); }
-  else if(a==='sum-next'){ summaryWeekOffset++; renderSummary(); }
-  else if(a==='sum-share') shareSummary();
-  else if(a==='sum-copy') copySummary();
   else if(a==='theme') setTheme(id);
   else if(a==='install') installApp();
   else if(a==='cal-select'){ calSelected=id; render(); }
@@ -1370,9 +1367,22 @@ function weekSummaryText(){
     const ds=dstr(d);
     const lines=[];
     if(sumOpts.events){
+      const groups=new Map();
       eventsOnDate(ds).forEach(ev=>{
-        const done=eventDoneOn(ev,ds);
-        lines.push(`${done?'✅':'•'} ${ev.time?ev.time+' ':''}${ev.title}`);
+        const key=(ev.time||'')+'|'+ev.title;
+        if(!groups.has(key)) groups.set(key,{title:ev.title,time:ev.time,items:[]});
+        groups.get(key).items.push(ev);
+      });
+      groups.forEach(g=>{
+        const allDone=g.items.every(ev=>eventDoneOn(ev,ds));
+        const prefix=allDone?'✅':'•';
+        const tp=g.time?g.time+' ':'';
+        if(g.items.length>1){
+          const shops=g.items.map(ev=>shortBiz(getBiz(ev.businessId).name)).join(', ');
+          lines.push(`${prefix} ${tp}${g.title} (${shops})`);
+        } else {
+          lines.push(`${prefix} ${tp}${g.title}`);
+        }
       });
     }
     if(sumOpts.tasks){
@@ -1398,9 +1408,13 @@ function renderSummary(){
   paintSumOpts();
 }
 function openSummary(){ summaryWeekOffset=0; renderSummary(); showOverlay('summary-modal'); }
+document.getElementById('sum-prev').onclick=()=>{ summaryWeekOffset--; renderSummary(); };
+document.getElementById('sum-next').onclick=()=>{ summaryWeekOffset++; renderSummary(); };
 document.getElementById('sum-opt-events').onclick=()=>{ sumOpts.events=!sumOpts.events; renderSummary(); };
 document.getElementById('sum-opt-tasks').onclick=()=>{ sumOpts.tasks=!sumOpts.tasks; renderSummary(); };
 document.getElementById('sum-opt-school').onclick=()=>{ sumOpts.school=!sumOpts.school; renderSummary(); };
+document.getElementById('sum-share').onclick=shareSummary;
+document.getElementById('sum-copy').onclick=copySummary;
 function shareSummary(){
   const text=document.getElementById('sum-text').value;
   if(navigator.share){ navigator.share({text}).catch(()=>{}); }
